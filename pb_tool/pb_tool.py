@@ -238,6 +238,7 @@ def install_files(plugin_dir, cfg):
             "them from the config. To ensure proper deployment, make sure your\n"
             "UI and resource files are compiled. Using dclean to delete the\n"
             "plugin before deploying may also help.")
+        sys.exit(1)
 
 
 def clean_deployment(ask_first=True, config='pb_tool.cfg', plugin_dir=None):
