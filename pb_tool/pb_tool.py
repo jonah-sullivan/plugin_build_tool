@@ -475,7 +475,7 @@ def validate(config_file):
     except:
         click.secho("""Unable to determine location of your QGIS Plugin directory.
         Make sure your QGIS environment is setup properly for development and Python
-        has access to the PyQt4.QtCore module.""", fg='red')
+        has access to the PyQt5.QtCore module.""", fg='red')
 
     zipbin = find_zip()
     a7z = find_7z()
