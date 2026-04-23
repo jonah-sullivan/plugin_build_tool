@@ -731,12 +731,21 @@ def compile_files(cfg):
     # TODO add changed detection
     # cfg = get_config(config)
 
-    # check to see if we have pyuic6
-    pyuic6 = check_path("pyuic6")
-
-    if not pyuic6:
-        print("pyuic6 is not in your path---unable to compile your ui files")
+    # determine Qt version and select appropriate uic tool
+    if check_path("pyuic6"):
+        pyuic = check_path("pyuic6")
+        qt_version = 6
+    elif check_path("pyuic5"):
+        pyuic = check_path("pyuic5")
+        qt_version = 5
     else:
+        pyuic = None
+        qt_version = None
+
+    if not pyuic:
+        print("pyuic5/pyuic6 is not in your path---unable to compile your ui files")
+    else:
+        print("Using Qt{0} ({1})".format(qt_version, pyuic))
         ui_files = cfg.get("files", "compiled_ui_files").split()
         ui_count = 0
         for ui in ui_files:
@@ -745,7 +754,7 @@ def compile_files(cfg):
                 output = "{0}.py".format(base)
                 if file_changed(ui, output):
                     print("Compiling {0} to {1}".format(ui, output))
-                    subprocess.check_call([pyuic6, "-o", output, ui])
+                    subprocess.check_call([pyuic, "-o", output, ui])
                     ui_count += 1
                 else:
                     print("Skipping {0} (unchanged)".format(ui))
@@ -770,7 +779,20 @@ def compile_files(cfg):
                 output = "{0}.py".format(base)
                 if file_changed(res, output):
                     print("Compiling {0} to {1}".format(res, output))
-                    subprocess.check_call([rcc, "-o", output, res])
+                    cmd = []
+                    if qt_version == 6:
+                        cmd += ["rcc", "-g", "python"]
+                    if qt_version == 5:
+                        cmd += ["pyrcc5"]
+                    cmd += ["-o", output, res]
+                    subprocess.check_call(cmd)
+                    with open(output, "r") as f:
+                        content = f.read()
+                    content = content.replace(
+                        "from PySide6 import QtCore", "from qgis.PyQt import QtCore"
+                    )
+                    with open(output, "w") as f:
+                        f.write(content)
                     res_count += 1
                 else:
                     print("Skipping {0} (unchanged)".format(res))
