@@ -826,8 +826,13 @@ def copy(source, destination):
 
 def get_plugin_directory():
     home = os.path.expanduser("~")
-    qgis2 = os.path.join(".qgis2", "python", "plugins")
-    return os.path.join(home, qgis2)
+    qgis4 = os.path.join(".local", "share", "QGIS", "QGIS4", "profiles", "default", "python", "plugins")
+    qgis3 = os.path.join(".local", "share", "QGIS", "QGIS3", "profiles", "default", "python", "plugins")
+    for candidate in [qgis4, qgis3]:
+        path = os.path.join(home, candidate)
+        if os.path.exists(path):
+            return path
+    return os.path.join(home, qgis4)
 
 
 def config_template():
@@ -843,7 +848,7 @@ def config_template():
 
 [plugin]
 # Name of the plugin. This is the name of the directory that will
-# be created in .qgis2/python/plugins
+# be created in the QGIS3/QGIS4 python/plugins directory
 name: $Name
 
 # Full path to where you want your plugin directory copied. If empty,
