@@ -8,14 +8,13 @@
 
 """
 
-__author__ = 'gsherman@geoapt.com'
-__date__ = '2014-10-06'
-__copyright__ = 'Copyright 2014, GeoApt LLC'
+__author__ = "gsherman@geoapt.com"
+__date__ = "2014-10-06"
+__copyright__ = "Copyright 2014, GeoApt LLC"
 
 import unittest
 
-from PyQt4.QtGui import QIcon
-
+from qgis.PyQt.QtGui import QIcon
 
 
 class TestPluginDialogTest(unittest.TestCase):
@@ -31,14 +30,12 @@ class TestPluginDialogTest(unittest.TestCase):
 
     def test_icon_png(self):
         """Test we can click OK."""
-        path = ':/plugins/TestPlugin/icon.png'
+        path = ":/plugins/TestPlugin/icon.png"
         icon = QIcon(path)
         self.assertFalse(icon.isNull())
+
 
 if __name__ == "__main__":
     suite = unittest.makeSuite(TestPluginResourcesTest)
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)
-
-
-

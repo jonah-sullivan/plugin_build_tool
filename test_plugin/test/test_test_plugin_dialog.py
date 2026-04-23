@@ -8,17 +8,18 @@
 
 """
 
-__author__ = 'gsherman@geoapt.com'
-__date__ = '2014-10-06'
-__copyright__ = 'Copyright 2014, GeoApt LLC'
+__author__ = "gsherman@geoapt.com"
+__date__ = "2014-10-06"
+__copyright__ = "Copyright 2014, GeoApt LLC"
 
 import unittest
 
-from PyQt4.QtGui import QDialogButtonBox, QDialog
+from qgis.PyQt.QtGui import QDialogButtonBox, QDialog
 
 from test_plugin_dialog import TestPluginDialog
 
 from utilities import get_qgis_app
+
 QGIS_APP = get_qgis_app()
 
 
@@ -48,8 +49,8 @@ class TestPluginDialogTest(unittest.TestCase):
         result = self.dialog.result()
         self.assertEqual(result, QDialog.Rejected)
 
+
 if __name__ == "__main__":
     suite = unittest.makeSuite(TestPluginDialogTest)
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)
-

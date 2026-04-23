@@ -509,7 +509,7 @@ def validate(config_file):
         click.secho(
             """Unable to determine location of your QGIS Plugin directory.
         Make sure your QGIS environment is setup properly for development and Python
-        has access to the PyQt4.QtCore module.""",
+        has access to the qgis.PyQt.QtCore module.""",
             fg="red",
         )
 
@@ -731,11 +731,11 @@ def compile_files(cfg):
     # TODO add changed detection
     # cfg = get_config(config)
 
-    # check to see if we have pyuic4
-    pyuic4 = check_path("pyuic4")
+    # check to see if we have pyuic6
+    pyuic6 = check_path("pyuic6")
 
-    if not pyuic4:
-        print("pyuic4 is not in your path---unable to compile your ui files")
+    if not pyuic6:
+        print("pyuic6 is not in your path---unable to compile your ui files")
     else:
         ui_files = cfg.get("files", "compiled_ui_files").split()
         ui_count = 0
@@ -745,7 +745,7 @@ def compile_files(cfg):
                 output = "{0}.py".format(base)
                 if file_changed(ui, output):
                     print("Compiling {0} to {1}".format(ui, output))
-                    subprocess.check_call([pyuic4, "-o", output, ui])
+                    subprocess.check_call([pyuic6, "-o", output, ui])
                     ui_count += 1
                 else:
                     print("Skipping {0} (unchanged)".format(ui))
