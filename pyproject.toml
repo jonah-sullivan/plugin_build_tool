@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pb_tool"
+version = "2.0.2"
+description = "A tool to aid in QGIS Python plugin development"
+readme = "README.md"
+license = { text = "GPL-2.0-or-later" }
+authors = [
+    { name = "Gary Sherman", email = "gsherman@geoapt.com" }
+]
+keywords = ["QGIS", "PyQGIS"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Build Tools",
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+dependencies = ["click", "sphinx", "colorama"]
+
+[project.urls]
+Homepage = "http://g-sherman.github.io/plugin_build_tool"
+
+[project.scripts]
+pb_tool = "pb_tool.pb_tool:cli"
+pbt = "pb_tool.pb_tool:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pb_tool"]
+
+[tool.hatch.build.targets.wheel.sources]
+include = ["pb_tool/templates/*.tmpl"]
