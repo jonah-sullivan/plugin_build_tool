@@ -350,9 +350,11 @@ def build_docs():
             makeprg = "make.bat"
         else:
             makeprg = "make"
+        env = os.environ.copy()
+        env["PYTHON"] = sys.executable
         cwd = os.getcwd()
         os.chdir("help")
-        subprocess.check_call([makeprg, "html"])
+        subprocess.check_call([makeprg, "html"], env=env)
         os.chdir(cwd)
     else:
         print("No help directory exists in the current directory")
