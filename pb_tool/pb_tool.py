@@ -876,7 +876,11 @@ def compile_files(cfg):
                     if qt_version == 6:
                         cmd += ["rcc", "-g", "python"]
                     if qt_version == 5:
-                        cmd += ["pyrcc5"]
+                        pyrcc5 = check_path("pyrcc5")
+                        if pyrcc5:
+                            cmd += [pyrcc5]
+                        else:
+                            cmd += [sys.executable, "-m", "PyQt5.pyrcc_main"]
                     cmd += ["-o", output, res]
                     subprocess.check_call(cmd)
                     with open(output, "r") as f:
