@@ -160,24 +160,13 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False):
 
 def install_files(plugin_dir, cfg):
     errors = []
-    install_files = get_install_files(cfg)
     # make the plugin directory if it doesn't exist
     if not os.path.exists(plugin_dir):
         os.makedirs(plugin_dir)
 
     fail = False
-    for file in install_files:
-        click.secho("Copying {0}".format(file), fg='magenta', nl=False)
-        try:
-            shutil.copy(file, os.path.join(plugin_dir, file))
-            print ""
-        except Exception as oops:
-            errors.append(
-                "Error copying files: {0}, {1}".format(file, oops.strerror))
-            click.echo(click.style(' ----> ERROR', fg='red'))
-            fail = True
-        extra_dirs = cfg.get('files', 'extra_dirs').split()
-        # print "EXTRA DIRS: {}".format(extra_dirs)
+    extra_dirs = cfg.get('files', 'extra_dirs').split()
+    # print "EXTRA DIRS: {}".format(extra_dirs)
     for xdir in extra_dirs:
         click.secho("Copying contents of {0} to {1}".format(xdir, plugin_dir),
                     fg='magenta',
@@ -188,6 +177,17 @@ def install_files(plugin_dir, cfg):
         except Exception as oops:
             errors.append(
                 "Error copying directory: {0}, {1}".format(xdir, oops.message))
+            click.echo(click.style(' ----> ERROR', fg='red'))
+            fail = True
+    install_files = get_install_files(cfg)
+    for file in install_files:
+        click.secho("Copying {0}".format(file), fg='magenta', nl=False)
+        try:
+            shutil.copy(file, os.path.join(plugin_dir, file))
+            print ""
+        except Exception as oops:
+            errors.append(
+                "Error copying files: {0}, {1}".format(file, oops.strerror))
             click.echo(click.style(' ----> ERROR', fg='red'))
             fail = True
     help_src = cfg.get('help', 'dir')
