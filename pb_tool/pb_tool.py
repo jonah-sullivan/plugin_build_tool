@@ -212,18 +212,22 @@ def install_files(plugin_dir, cfg):
             click.echo(click.style(" ----> ERROR", fg="red"))
             fail = True
     help_src = cfg.get("help", "dir")
-    help_target = os.path.join(plugin_dir, cfg.get("help", "target"))
-    click.secho(
-        "Copying {0} to {1}".format(help_src, help_target), fg="magenta", nl=False
-    )
-    # shutil.copytree(help_src, help_target)
-    try:
-        shutil.copytree(help_src, help_target, dirs_exist_ok=True)
-        print()
-    except Exception as oops:
-        errors.append("Error copying help files: {0}, {1}".format(help_src, str(oops)))
-        click.echo(click.style(" ----> ERROR", fg="red"))
-        fail = True
+    if os.path.exists(help_src):
+        help_target = os.path.join(plugin_dir, cfg.get("help", "target"))
+        click.secho(
+            "Copying {0} to {1}".format(help_src, help_target), fg="magenta", nl=False
+        )
+        try:
+            shutil.copytree(help_src, help_target, dirs_exist_ok=True)
+            print()
+        except Exception as oops:
+            errors.append("Error copying help files: {0}, {1}".format(help_src, str(oops)))
+            click.echo(click.style(" ----> ERROR", fg="red"))
+            fail = True
+    else:
+        click.secho(
+            "No help found at {0}, skipping".format(help_src), fg="yellow"
+        )
     if fail:
         print("\nERRORS:")
         for error in errors:
