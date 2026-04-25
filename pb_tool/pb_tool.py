@@ -25,6 +25,7 @@ import sys
 import subprocess
 import shutil
 import errno
+import fnmatch
 import glob
 import urllib.request
 import urllib.error
@@ -78,11 +79,15 @@ def get_install_files(cfg):
     python_files = cfg.get("files", "python_files").split()
     main_dialog = cfg.get("files", "main_dialog").split()
     extras = cfg.get("files", "extras").split()
-    # merge the file lists
     install_files = (
         python_files + main_dialog + compiled_ui(cfg) + compiled_resource(cfg) + extras
     )
-    # click.echo(install_files)
+    exclusions = cfg.get("files", "excluded_files", fallback="").split()
+    if exclusions:
+        install_files = [
+            f for f in install_files
+            if not any(fnmatch.fnmatch(f, pat) for pat in exclusions)
+        ]
     return install_files
 
 
@@ -874,6 +879,9 @@ resource_files: $Resources
 
 # Other files required for the plugin
 extras: $Extras
+
+# Files to exclude from deployment (glob patterns, space-separated)
+excluded_files:
 
 # Other directories to be deployed with the plugin.
 # These must be subdirectories under the plugin directory
