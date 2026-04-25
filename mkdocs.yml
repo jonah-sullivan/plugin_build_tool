@@ -4,9 +4,9 @@ site_url: https://jonah-sullivan.github.io/plugin_build_tool/
 repo_url: https://github.com/jonah-sullivan/plugin_build_tool
 repo_name: jonah-sullivan/plugin_build_tool
 
-docs_dir: .
+docs_dir: docs
 nav:
-  - Home: README.md
+  - Home: index.md
 
 theme:
   name: material

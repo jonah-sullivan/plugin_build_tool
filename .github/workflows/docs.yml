@@ -17,6 +17,8 @@ jobs:
         with:
           python-version: "3.x"
 
-      - run: pip install mkdocs-material
+      - run: pip install "mkdocs-material<9.6"
+
+      - run: mkdir -p docs && cp README.md docs/index.md
 
       - run: mkdocs gh-deploy --force
