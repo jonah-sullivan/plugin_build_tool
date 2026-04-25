@@ -1,0 +1,80 @@
+# -*- coding: utf-8 -*-
+"""
+/***************************************************************************
+ ${TemplateClass}Algorithm
+                                 A QGIS plugin
+ $TemplateDescription
+                             -------------------
+        begin                : $TemplateBuildDate
+        copyright            : (C) $TemplateYear by $TemplateAuthor
+        email                : $TemplateEmail
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+from qgis.core import (
+    QgsProcessingAlgorithm,
+    QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterFeatureSink,
+    QgsProcessing,
+)
+
+
+class ${TemplateClass}Algorithm(QgsProcessingAlgorithm):
+
+    INPUT = 'INPUT'
+    OUTPUT = 'OUTPUT'
+
+    def initAlgorithm(self, config=None):
+        self.addParameter(
+            QgsProcessingParameterFeatureSource(
+                self.INPUT,
+                'Input layer',
+                [QgsProcessing.TypeVectorAnyGeometry],
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterFeatureSink(
+                self.OUTPUT,
+                'Output layer',
+            )
+        )
+
+    def processAlgorithm(self, parameters, context, feedback):
+        source = self.parameterAsSource(parameters, self.INPUT, context)
+        (sink, dest_id) = self.parameterAsSink(
+            parameters, self.OUTPUT, context,
+            source.fields(), source.wkbType(), source.sourceCrs()
+        )
+
+        total = source.featureCount()
+        for i, feature in enumerate(source.getFeatures()):
+            if feedback.isCanceled():
+                break
+            sink.addFeature(feature)
+            feedback.setProgress(int(i / total * 100))
+
+        return {self.OUTPUT: dest_id}
+
+    def name(self):
+        return '${TemplateModuleName}_algorithm'
+
+    def displayName(self):
+        return '$TemplateDescription'
+
+    def group(self):
+        return '${TemplateClass}'
+
+    def groupId(self):
+        return '${TemplateModuleName}'
+
+    def createInstance(self):
+        return ${TemplateClass}Algorithm()

@@ -1,0 +1,46 @@
+<html>
+<body>
+<h3>Plugin Builder Results</h3>
+
+Congratulations! You just built a processing plugin for QGIS!<br/><br/>
+
+<div id='help' style='font-size:.9em;'>
+Your plugin <b>${TemplateClass}</b> was created in:<br>
+&nbsp;&nbsp;<b>${PluginDir}</b>
+<p>
+Your QGIS plugin directory is located at:<br>
+&nbsp;&nbsp;<b>${UserPluginDir}</b>
+<p>
+<h3>What's Next</h3>
+<ol>
+    <li>Add a <b>metadata.txt</b> to your plugin directory &mdash; QGIS requires it to load the plugin.</li>
+    <li>Deploy the plugin using <b>pb_tool</b>:<br>
+        <code>pb_tool deploy</code></li>
+    <li>Enable the plugin in the QGIS Plugin Manager.</li>
+    <li>Open the Processing Toolbox &mdash; your provider will appear under <b>${TemplateClass}</b>.</li>
+    <li>Customise the algorithm by editing <b>${TemplateModuleName}_algorithm.py</b>.</li>
+    <li>Add more algorithms by creating additional <b>QgsProcessingAlgorithm</b> subclasses and
+        registering them in <b>${TemplateModuleName}_provider.py</b>.</li>
+    <li>Create a custom icon by replacing the default <b>icon.png</b> and referencing it
+        in your provider's <b>icon()</b> method.</li>
+</ol>
+<h3>File Overview</h3>
+<ul>
+    <li><b>${TemplateModuleName}.py</b> &mdash; Main plugin class; registers the processing provider with QGIS.</li>
+    <li><b>${TemplateModuleName}_provider.py</b> &mdash; QgsProcessingProvider subclass; loads your algorithms.</li>
+    <li><b>${TemplateModuleName}_algorithm.py</b> &mdash; Example QgsProcessingAlgorithm with input and output layers.</li>
+    <li><b>__init__.py</b> &mdash; Plugin entry point required by QGIS.</li>
+</ul>
+</div>
+<div style='font-size:.9em;'>
+<p>
+For information on writing PyQGIS processing algorithms, see the
+<a href='https://docs.qgis.org/latest/en/docs/pyqgis_developer_cookbook/'>PyQGIS Developer Cookbook</a>
+and the <a href='https://qgis.org/pyqgis/master/core/QgsProcessingAlgorithm.html'>QgsProcessingAlgorithm API docs</a>.
+</p>
+</div>
+<p>
+&copy; $TemplateYear $TemplateAuthor
+</p>
+</body>
+</html>

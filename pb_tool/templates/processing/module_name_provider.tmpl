@@ -1,0 +1,39 @@
+# -*- coding: utf-8 -*-
+"""
+/***************************************************************************
+ ${TemplateClass}Provider
+                                 A QGIS plugin
+ $TemplateDescription
+                             -------------------
+        begin                : $TemplateBuildDate
+        copyright            : (C) $TemplateYear by $TemplateAuthor
+        email                : $TemplateEmail
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+from qgis.core import QgsProcessingProvider
+from .${TemplateModuleName}_algorithm import ${TemplateClass}Algorithm
+
+
+class ${TemplateClass}Provider(QgsProcessingProvider):
+
+    def loadAlgorithms(self):
+        self.addAlgorithm(${TemplateClass}Algorithm())
+
+    def id(self):
+        return '${TemplateModuleName}'
+
+    def name(self):
+        return '${TemplateClass}'
+
+    def longName(self):
+        return self.name()

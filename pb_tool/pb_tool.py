@@ -655,6 +655,80 @@ def xxconfig(name, package):
 
 
 @cli.command()
+@click.option(
+    "--type",
+    "plugin_type",
+    type=click.Choice(["processing", "dialog"], case_sensitive=False),
+    default="processing",
+    help="Type of plugin skeleton to create",
+)
+@click.option("--name", default=None, help="Plugin module name (snake_case)")
+@click.option("--class_name", default=None, help="Plugin class name (CamelCase)")
+@click.option("--description", default=None, help="Short plugin description")
+@click.option("--author", default=None, help="Author name")
+@click.option("--email", default=None, help="Author email")
+def create(plugin_type, name, class_name, description, author, email):
+    """Create a new plugin skeleton from a template"""
+    from datetime import date
+
+    name = name or click.prompt("Module name (snake_case, used as directory name)")
+    class_name = class_name or click.prompt("Class name (CamelCase)")
+    description = description or click.prompt("Description")
+    author = author or click.prompt("Author")
+    email = email or click.prompt("Email")
+
+    subs = {
+        "TemplateModuleName": name,
+        "TemplateClass": class_name,
+        "TemplateDescription": description,
+        "TemplateAuthor": author,
+        "TemplateEmail": email,
+        "TemplateYear": str(date.today().year),
+        "TemplateBuildDate": date.today().isoformat(),
+    }
+
+    tmpl_dir = os.path.join(os.path.dirname(__file__), "templates", plugin_type)
+    if not os.path.exists(tmpl_dir):
+        click.secho("No templates found for type '{0}'".format(plugin_type), fg="red")
+        return
+
+    out_dir = name
+    if os.path.exists(out_dir):
+        if not click.confirm("Directory '{0}' exists. Overwrite?".format(out_dir)):
+            return
+    os.makedirs(out_dir, exist_ok=True)
+
+    file_map = {
+        "__init__.tmpl": "__init__.py",
+        "module_name.tmpl": "{0}.py".format(name),
+        "module_name_provider.tmpl": "{0}_provider.py".format(name),
+        "module_name_algorithm.tmpl": "{0}_algorithm.py".format(name),
+        "module_name_dialog.tmpl": "{0}_dialog.py".format(name),
+        "module_name_dialog_base.ui.tmpl": "{0}_dialog_base.ui".format(name),
+        "resources.tmpl": "resources.qrc",
+        "readme.tmpl": "README.md",
+        "results.tmpl": "results.py",
+    }
+
+    for tmpl_file, out_file in file_map.items():
+        tmpl_path = os.path.join(tmpl_dir, tmpl_file)
+        if not os.path.exists(tmpl_path):
+            continue
+        with open(tmpl_path) as f:
+            content = Template(f.read()).safe_substitute(subs)
+        out_path = os.path.join(out_dir, out_file)
+        with open(out_path, "w") as f:
+            f.write(content)
+        click.secho("Created {0}".format(out_path), fg="green")
+
+    click.secho(
+        "\nPlugin skeleton created in '{0}/'. "
+        "Add a metadata.txt and run pb_tool deploy to get started.".format(out_dir),
+        fg="green",
+    )
+
+
+@cli.command()
 def update():
     """Check for update to pb_tool"""
     try:
