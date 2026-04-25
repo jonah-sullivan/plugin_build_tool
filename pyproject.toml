@@ -25,6 +25,8 @@ dependencies = ["click", "sphinx", "colorama"]
 
 [project.urls]
 Homepage = "https://jonah-sullivan.github.io/plugin_build_tool"
+Repository = "https://github.com/jonah-sullivan/plugin_build_tool"
+"Bug Tracker" = "https://github.com/jonah-sullivan/plugin_build_tool/issues"
 
 [project.scripts]
 pb_tool = "pb_tool.pb_tool:cli"

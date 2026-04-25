@@ -1,0 +1,18 @@
+site_name: pb_tool
+site_description: A command-line tool for building and deploying QGIS Python plugins
+site_url: https://jonah-sullivan.github.io/plugin_build_tool/
+repo_url: https://github.com/jonah-sullivan/plugin_build_tool
+repo_name: jonah-sullivan/plugin_build_tool
+
+docs_dir: .
+nav:
+  - Home: README.md
+
+theme:
+  name: material
+  palette:
+    primary: green
+    accent: light green
+  features:
+    - navigation.top
+    - content.code.copy
