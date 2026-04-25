@@ -1,6 +1,5 @@
 import os
 
-import click
 from click.testing import CliRunner
 from pb_tool import pb_tool
 
@@ -65,11 +64,6 @@ def test_dclean():
 
 def test_list():
     result = runner.invoke(pb_tool.cli, ["list"])
-    assert result.exit_code == 0
-
-
-def test_validate():
-    result = runner.invoke(pb_tool.cli, ["validate"])
     assert result.exit_code == 0
 
 

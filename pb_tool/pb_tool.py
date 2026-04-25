@@ -122,12 +122,18 @@ def version():
     is_flag=True,
     help="Don't ask for confirmation to overwrite existing files",
 )
-def deploy(config_file, plugin_path, quick, no_confirm):
+@click.option(
+    "--no-docs",
+    "-n",
+    is_flag=True,
+    help="Skip building the Sphinx help documentation",
+)
+def deploy(config_file, plugin_path, quick, no_confirm, no_docs):
     """Deploy the plugin to QGIS plugin directory using parameters in pb_tool.cfg"""
-    deploy_files(config_file, plugin_path, quick=quick, confirm=not no_confirm)
+    deploy_files(config_file, plugin_path, quick=quick, confirm=not no_confirm, build_help=not no_docs)
 
 
-def deploy_files(config_file, plugin_path, confirm=True, quick=False):
+def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help=True):
     """Deploy the plugin using parameters in pb_tool.cfg"""
     # check for the config file
     if not os.path.exists(config_file):
@@ -153,12 +159,12 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False):
 
         else:
             if confirm:
+                docs_line = "                * Build the help docs\n" if build_help else ""
                 print("""Deploying will:
                 * Remove your currently deployed version
                 * Compile the ui and resource files
-                * Build the help docs
-                * Copy everything to your {} directory
-                """.format(plugin_dir))
+{0}                * Copy everything to your {1} directory
+                """.format(docs_line, plugin_dir))
 
                 proceed = click.confirm("Proceed?")
             else:
@@ -171,7 +177,8 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False):
                 # compile to make sure everything is fresh
                 click.secho("Compiling to make sure install is clean", fg="green")
                 compile_files(cfg)
-                build_docs()
+                if build_help:
+                    build_docs()
                 install_files(plugin_dir, cfg)
 
 
