@@ -185,9 +185,7 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help
 def install_files(plugin_dir, cfg):
     errors = []
     install_files = get_install_files(cfg)
-    # make the plugin directory if it doesn't exist
-    if not os.path.exists(plugin_dir):
-        os.makedirs(plugin_dir)
+    os.makedirs(plugin_dir, exist_ok=True)
 
     fail = False
     for file in install_files:
