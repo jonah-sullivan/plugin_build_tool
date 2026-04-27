@@ -5,35 +5,71 @@ from pb_tool import pb_tool
 
 runner = CliRunner()
 
+MINIMAL_CFG = """
+[plugin]
+name: TestPlugin
+
+[files]
+python_files:
+main_dialog:
+compiled_ui_files:
+resource_files:
+extras:
+extra_dirs:
+locales:
+
+[help]
+dir: help/build/html
+target: help
+"""
+
 
 def test_validate():
-    result = runner.invoke(pb_tool.cli, ["validate"])
-    assert result.exit_code == 0
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG)
+        result = runner.invoke(pb_tool.cli, ["validate"])
+        assert result.exit_code == 0
 
 
 def test_clean():
-    result = runner.invoke(pb_tool.cli, ["clean"])
-    assert result.exit_code == 0
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG)
+        result = runner.invoke(pb_tool.cli, ["clean"])
+        assert result.exit_code == 0
 
 
 def test_cleandocs():
-    result = runner.invoke(pb_tool.cli, ["clean_docs"])
+    result = runner.invoke(pb_tool.cli, ["clean-docs"])
     assert result.exit_code == 0
 
 
 def test_config():
-    result = runner.invoke(
-        pb_tool.cli,
-        ["config", "--name", "test_from_pytest.cfg", "--package", "testname"],
-        input="y\n",
-    )
-    assert result.exit_code == 0
-    assert os.path.exists("test_from_pytest.cfg") == 1
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            pb_tool.cli,
+            ["config", "--name", "test_from_pytest.cfg", "--package", "testname"],
+            input="y\n",
+        )
+        assert result.exit_code == 0
+        assert os.path.exists("test_from_pytest.cfg") == 1
 
 
 def test_create():
-    result = runner.invoke(pb_tool.cli, ["create"])
-    assert result.exit_code == 0
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            pb_tool.cli,
+            [
+                "create",
+                "--name", "my_plugin",
+                "--class_name", "MyPlugin",
+                "--description", "A test plugin",
+                "--author", "Test Author",
+                "--email", "test@example.com",
+            ],
+        )
+        assert result.exit_code == 0
 
 
 def test_doc():
@@ -49,17 +85,14 @@ def test_deploy():
 def test_zip():
     result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
     assert result.exit_code == 0
-    # assert os.path.exists(os.path.join(os.getcwd(), 'whereami.zip'))
 
 
 def test_dclean():
-    result = runner.invoke(pb_tool.cli, ["dclean"], input="y\n")
-    assert result.exit_code == 0
-
-
-# def test_help():
-#     result = runner.invoke(pb_tool.cli, ['help'])
-#     assert result.exit_code == 0
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG)
+        result = runner.invoke(pb_tool.cli, ["dclean"], input="y\n")
+        assert result.exit_code == 0
 
 
 def test_list():
@@ -78,12 +111,8 @@ def test_version():
 
 
 def test_compile():
-    result = runner.invoke(pb_tool.cli, ["compile"])
-    assert result.exit_code == 0
-
-
-#    results.append("Command validate failed: {}".format(result.output))
-# print("testing validate: {}".format(result))
-# result = runner.invoke(pb_tool.cli, ['zip', '-q'])
-# print("testing zip: {}".format(result))
-# print results
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG)
+        result = runner.invoke(pb_tool.cli, ["compile"])
+        assert result.exit_code == 0

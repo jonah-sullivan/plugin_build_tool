@@ -213,7 +213,7 @@ def install_files(plugin_dir, cfg):
         )
         try:
             shutil.copytree(
-                xdir, "{0}/{1}".format(plugin_dir, xdir), dirs_exist_ok=True
+                xdir, os.path.join(plugin_dir, xdir), dirs_exist_ok=True
             )
             print()
         except Exception as oops:
@@ -400,7 +400,7 @@ def translate(config):
 
 @cli.command()
 @click.option(
-    "--config",
+    "--config_file",
     default="pb_tool.cfg",
     help="Name of the config file to use if other than pb_tool.cfg",
 )
@@ -587,7 +587,7 @@ def list(config_file):
     default=None,
     help="Name of package (lower case). This will be used as the directory name for deployment",
 )
-def xxconfig(name, package):
+def config(name, package):
     """
     Create a config file based on source files in the current directory
     """
@@ -606,7 +606,9 @@ def xxconfig(name, package):
     template = Template(config_template())
 
     # get the plugin package name
-    if not package:
+    if package:
+        cfg_name = package
+    else:
         cfg_name = click.prompt(
             "Name of package (lower case). This will be used as the directory name for deployment"
         )
@@ -943,13 +945,22 @@ def copy(source, destination):
 
 def get_plugin_directory():
     home = os.path.expanduser("~")
-    qgis4 = os.path.join(".local", "share", "QGIS", "QGIS4", "profiles", "default", "python", "plugins")
-    qgis3 = os.path.join(".local", "share", "QGIS", "QGIS3", "profiles", "default", "python", "plugins")
-    for candidate in [qgis4, qgis3]:
-        path = os.path.join(home, candidate)
+    if sys.platform == "win32":
+        appdata = os.environ.get("APPDATA", home)
+        candidates = [
+            os.path.join(appdata, "QGIS", "QGIS4", "profiles", "default", "python", "plugins"),
+            os.path.join(appdata, "QGIS", "QGIS3", "profiles", "default", "python", "plugins"),
+        ]
+        default = candidates[0]
+    else:
+        qgis4 = os.path.join(home, ".local", "share", "QGIS", "QGIS4", "profiles", "default", "python", "plugins")
+        qgis3 = os.path.join(home, ".local", "share", "QGIS", "QGIS3", "profiles", "default", "python", "plugins")
+        candidates = [qgis4, qgis3]
+        default = qgis4
+    for path in candidates:
         if os.path.exists(path):
             return path
-    return os.path.join(home, qgis4)
+    return default
 
 
 def config_template():

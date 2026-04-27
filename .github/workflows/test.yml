@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - qgis4-version
+  pull_request:
+    branches:
+      - qgis4-version
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - run: pip install -e "." pytest
+
+      - run: pytest test_pb_tool.py -v
