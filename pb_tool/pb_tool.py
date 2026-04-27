@@ -33,6 +33,7 @@ import configparser
 from string import Template
 
 import click
+from importlib.metadata import version as _pkg_version, PackageNotFoundError
 
 
 class AliasedGroup(click.Group):
@@ -70,9 +71,11 @@ def cli():
 
 
 def __version():
-    """return the current version and date"""
-    # TODO update this with each release
-    return ("2.0.2", "2018-12-26")
+    """return the current version"""
+    try:
+        return _pkg_version("pb_tool")
+    except PackageNotFoundError:
+        return "unknown"
 
 
 def get_install_files(cfg):
@@ -94,7 +97,7 @@ def get_install_files(cfg):
 @cli.command()
 def version():
     """Return the version of pb_tool and exit"""
-    click.echo("{} {}".format(__version()[0], __version()[1]))
+    click.echo(__version())
 
 
 @cli.command()
@@ -765,18 +768,18 @@ def update():
         version = u.read()[:-1]
         click.secho("Latest version is %s" % version, fg="green")
         # convert version numbers to int
-        this_version = int(__version()[0].replace(".", ""))
+        this_version = int(__version().replace(".", ""))
         current_version = int(version.replace(".", ""))
 
         if this_version == current_version:
             click.secho("Your version is up to date", fg="green")
         elif current_version > this_version:
-            click.secho("You have Version %s" % __version()[0], fg="green")
+            click.secho("You have Version %s" % __version(), fg="green")
             click.secho("You can upgrade by running this command:")
             cmd = "pip install --upgrade pb_tool"
             print("   %s" % cmd)
         elif this_version > current_version:
-            click.secho("You have development Version %s" % __version()[0], fg="green")
+            click.secho("You have development Version %s" % __version(), fg="green")
 
     except urllib.error.URLError as uoops:
         click.secho("Unable to check for update.")
