@@ -27,6 +27,7 @@ import shutil
 import errno
 import fnmatch
 import glob
+import json
 import urllib.request
 import urllib.error
 import configparser
@@ -758,8 +759,8 @@ def create(plugin_type, name, class_name, description, author, email):
 def update():
     """Check for update to pb_tool"""
     try:
-        u = urllib.request.urlopen("http://geoapt.net/pb_tool/current_version.txt")
-        version = u.read()[:-1]
+        u = urllib.request.urlopen("https://pypi.org/pypi/pb_tool/json")
+        version = json.loads(u.read())["info"]["version"]
         click.secho("Latest version is %s" % version, fg="green")
         # convert version numbers to int
         this_version = int(__version().replace(".", ""))
