@@ -252,7 +252,7 @@ def install_files(plugin_dir, cfg):
 
 
 def clean_deployment(ask_first=True, config="pb_tool.cfg", plugin_dir=None):
-    """Remove the deployed plugin from the .qgis2/python/plugins directory"""
+    """Remove the deployed plugin from the .local/share/QGIS/QGIS4/profiles/default/python/plugins directory"""
     if not plugin_dir:
         name = get_config(config).get("plugin", "name")
         plugin_dir = os.path.join(get_plugin_directory(), name)
@@ -301,7 +301,7 @@ def clean_docs():
     help="Name of the config file to use if other than pb_tool.cfg",
 )
 def dclean(config):
-    """Remove the deployed plugin from the .qgis2/python/plugins directory"""
+    """Remove the deployed plugin from the .local/share/QGIS/QGIS4/profiles/default/python/plugins directory"""
     clean_deployment(True, config)
 
 
