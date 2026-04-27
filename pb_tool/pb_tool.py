@@ -391,9 +391,7 @@ def translate(config):
                 for locale in locales:
                     name, ext = os.path.splitext(locale)
                     if ext != ".ts":
-                        print("no ts extension")
                         locale = name + ".ts"
-                    print(cmd, locale)
                     subprocess.check_call([cmd, os.path.join("i18n", locale)])
             else:
                 print("No translations are specified in {0}".format(config))
