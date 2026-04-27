@@ -7,7 +7,7 @@
                              -------------------
         begin                : 2014-10-06
         git sha              : $Format:%H$
-        copyright            : (C) 2014 by GeoApt LLC
+        copyright            : (C) 2014-2026 by Gary Sherman, 2026 Jonah Sullivan
         email                : gsherman@geoapt.com
  ***************************************************************************/
 

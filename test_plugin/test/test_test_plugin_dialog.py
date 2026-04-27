@@ -10,7 +10,7 @@
 
 __author__ = "gsherman@geoapt.com"
 __date__ = "2014-10-06"
-__copyright__ = "Copyright 2014, GeoApt LLC"
+__copyright__ = "Copyright 2014-2026, Gary Sherman, 2026 Jonah Sullivan"
 
 import unittest
 

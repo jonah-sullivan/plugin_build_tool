@@ -4,7 +4,7 @@
                  A tool for building and deploying QGIS plugins
                               -------------------
         begin                : 2014-09-24
-        copyright            : (C) 2014 by GeoApt LLC
+        copyright            : (C) 2014-2026 by Gary Sherman, 2026 Jonah Sullivan
         email                : gsherman@geoapt.com
  ***************************************************************************/
 
