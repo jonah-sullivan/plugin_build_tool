@@ -78,13 +78,19 @@ def test_doc():
 
 
 def test_deploy():
-    result = runner.invoke(pb_tool.cli, ["deploy"], input="y\n")
-    assert result.exit_code == 0
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG)
+        result = runner.invoke(pb_tool.cli, ["deploy"], input="y\n")
+        assert result.exit_code == 0
 
 
 def test_zip():
-    result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
-    assert result.exit_code == 0
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG)
+        result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
+        assert result.exit_code == 0
 
 
 def test_dclean():

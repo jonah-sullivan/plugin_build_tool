@@ -192,6 +192,7 @@ def install_files(plugin_dir, cfg):
     os.makedirs(plugin_dir, exist_ok=True)
 
     fail = False
+    extra_dirs = cfg.get("files", "extra_dirs").split()
     for file in install_files:
         click.secho("Copying {0}".format(file), fg="magenta", nl=False)
         try:
@@ -203,8 +204,6 @@ def install_files(plugin_dir, cfg):
             errors.append("Error copying files: {0}, {1}".format(file, oops.strerror))
             click.echo(click.style(" ----> ERROR", fg="red"))
             fail = True
-        extra_dirs = cfg.get("files", "extra_dirs").split()
-        # print "EXTRA DIRS: {}".format(extra_dirs)
     for xdir in extra_dirs:
         click.secho(
             "Copying contents of {0} to {1}".format(xdir, plugin_dir),
