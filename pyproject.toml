@@ -28,7 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 requires-python = ">=3.9"
-dependencies = ["click", "sphinx", "colorama"]
+dependencies = ["click", "sphinx", "colorama", "defusedxml"]
 
 [project.urls]
 Homepage = "https://jonah-sullivan.github.io/plugin_build_tool"

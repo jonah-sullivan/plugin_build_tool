@@ -461,12 +461,13 @@ def zip(config_file, quick):
             if use_7z:
                 subprocess.check_call(
                     [zip, "a", "-r", os.path.join(cwd, "{0}.zip".format(name)), name,
-                     "-xr!__pycache__", "-xr!*.pyc"]
+                     "-xr!__pycache__", "-xr!*.pyc", "-xr!.buildinfo", "-xr!.buildinfo.bak"]
                 )
             else:
                 subprocess.check_call(
                     [zip, "-r", os.path.join(cwd, "{0}.zip".format(name)), name,
-                     "-x", "*/__pycache__/*", "-x", "*/*.pyc"]
+                     "-x", "*/__pycache__/*", "-x", "*/*.pyc",
+                     "-x", "*/.buildinfo", "-x", "*/.buildinfo.bak"]
                 )
 
             print(
