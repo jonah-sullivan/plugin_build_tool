@@ -28,7 +28,7 @@ import errno
 import fnmatch
 import glob
 import json
-import urllib.request
+import http.client
 import urllib.error
 import configparser
 from string import Template
@@ -764,8 +764,9 @@ def create(plugin_type, name, class_name, description, author, email):
 def update():
     """Check for update to pb_tool"""
     try:
-        u = urllib.request.urlopen("https://pypi.org/pypi/pb_tool/json")
-        version = json.loads(u.read())["info"]["version"]
+        conn = http.client.HTTPSConnection("pypi.org")
+        conn.request("GET", "/pypi/pb_tool/json")
+        version = json.loads(conn.getresponse().read())["info"]["version"]
         click.secho("Latest version is %s" % version, fg="green")
         # convert version numbers to int
         this_version = int(__version().replace(".", ""))
