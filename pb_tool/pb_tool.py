@@ -691,6 +691,7 @@ def create(plugin_type, name, class_name, description, author, email):
         "TemplateEmail": email,
         "TemplateYear": str(date.today().year),
         "TemplateBuildDate": date.today().isoformat(),
+        "TemplateVCSFormat": "$Format:%H$",
     }
 
     tmpl_dir = os.path.join(os.path.dirname(__file__), "templates", plugin_type)

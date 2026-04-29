@@ -72,6 +72,70 @@ def test_create():
         assert result.exit_code == 0
 
 
+def test_create_processing_files():
+    """create --type processing produces the expected files with substituted content."""
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            pb_tool.cli,
+            [
+                "create",
+                "--type", "processing",
+                "--name", "my_plugin",
+                "--class_name", "MyPlugin",
+                "--description", "A test plugin",
+                "--author", "Test Author",
+                "--email", "test@example.com",
+            ],
+        )
+        assert result.exit_code == 0
+        for expected in [
+            os.path.join("my_plugin", "__init__.py"),
+            os.path.join("my_plugin", "my_plugin.py"),
+            os.path.join("my_plugin", "my_plugin_algorithm.py"),
+            os.path.join("my_plugin", "my_plugin_provider.py"),
+            os.path.join("my_plugin", "README.md"),
+            os.path.join("my_plugin", "pb_tool.cfg"),
+        ]:
+            assert os.path.exists(expected), f"{expected} was not created"
+        with open(os.path.join("my_plugin", "my_plugin.py")) as f:
+            content = f.read()
+        assert "MyPlugin" in content
+        assert "Test Author" in content
+        assert "$Template" not in content
+
+
+def test_create_dialog_files():
+    """create --type dialog produces the expected files with substituted content."""
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            pb_tool.cli,
+            [
+                "create",
+                "--type", "dialog",
+                "--name", "my_plugin",
+                "--class_name", "MyPlugin",
+                "--description", "A test plugin",
+                "--author", "Test Author",
+                "--email", "test@example.com",
+            ],
+        )
+        assert result.exit_code == 0
+        for expected in [
+            os.path.join("my_plugin", "__init__.py"),
+            os.path.join("my_plugin", "my_plugin.py"),
+            os.path.join("my_plugin", "my_plugin_dialog.py"),
+            os.path.join("my_plugin", "my_plugin_dialog_base.ui"),
+            os.path.join("my_plugin", "resources.qrc"),
+            os.path.join("my_plugin", "README.md"),
+            os.path.join("my_plugin", "pb_tool.cfg"),
+        ]:
+            assert os.path.exists(expected), f"{expected} was not created"
+        with open(os.path.join("my_plugin", "my_plugin_dialog.py")) as f:
+            content = f.read()
+        assert "MyPlugin" in content
+        assert "$Template" not in content
+
+
 def test_doc():
     result = runner.invoke(pb_tool.cli, ["doc"])
     assert result.exit_code == 0
