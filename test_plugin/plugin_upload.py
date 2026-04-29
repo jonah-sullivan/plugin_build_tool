@@ -5,25 +5,61 @@ Authors: A. Pasotti, V. Picavet
 git sha              : $TemplateVCSFormat
 """
 
+import base64
 import sys
 import getpass
-import xmlrpc.client
+import urllib.request
+import urllib.error
 from optparse import OptionParser
+
+import defusedxml.ElementTree as ET
 
 # Configuration
 PROTOCOL = "http"
 SERVER = "plugins.qgis.org"
 PORT = "80"
 ENDPOINT = "/plugins/RPC2/"
-VERBOSE = False
+
+
+def _post_upload(address, plugin_data):
+    """POST a plugin.upload XML-RPC call and return the raw response bytes."""
+    encoded = base64.b64encode(plugin_data).decode("ascii")
+    payload = (
+        "<?xml version='1.0'?>"
+        "<methodCall>"
+        "<methodName>plugin.upload</methodName>"
+        "<params><param>"
+        "<value><base64>{}</base64></value>"
+        "</param></params>"
+        "</methodCall>"
+    ).format(encoded).encode("utf-8")
+
+    req = urllib.request.Request(
+        address,
+        data=payload,
+        headers={"Content-Type": "text/xml"},
+    )
+    with urllib.request.urlopen(req) as response:
+        return response.read()
+
+
+def _parse_response(xml_data):
+    """Parse an XML-RPC response using defusedxml; raise on fault."""
+    root = ET.fromstring(xml_data)
+    fault = root.find("fault")
+    if fault is not None:
+        members = {}
+        for member in fault.iter("member"):
+            name = member.find("name").text
+            value_el = member.find("value")
+            members[name] = next(iter(value_el), value_el).text
+        raise RuntimeError(
+            "Fault {faultCode}: {faultString}".format(**members)
+        )
+    return tuple(int(v.text) for v in root.iter("int"))
 
 
 def main(parameters, arguments):
-    """Main entry point.
-
-    :param parameters: Command line parameters.
-    :param arguments: Command line arguments.
-    """
     address = "%s://%s:%s@%s:%s%s" % (
         PROTOCOL,
         parameters.username,
@@ -34,35 +70,25 @@ def main(parameters, arguments):
     )
     print("Connecting to: %s" % hide_password(address))
 
-    server = xmlrpc.client.ServerProxy(address, verbose=VERBOSE)
-
     try:
-        plugin_id, version_id = server.plugin.upload(
-            xmlrpc.client.Binary(open(arguments[0]).read())
-        )
+        with open(arguments[0], "rb") as handle:
+            response_data = _post_upload(address, handle.read())
+        plugin_id, version_id = _parse_response(response_data)
         print("Plugin ID: %s" % plugin_id)
         print("Version ID: %s" % version_id)
-    except xmlrpc.client.ProtocolError as err:
+    except urllib.error.HTTPError as err:
         print("A protocol error occurred")
         print("URL: %s" % hide_password(err.url, 0))
-        print("HTTP/HTTPS headers: %s" % err.headers)
-        print("Error code: %d" % err.errcode)
-        print("Error message: %s" % err.errmsg)
-    except xmlrpc.client.Fault as err:
+        print("HTTP headers: %s" % err.headers)
+        print("Error code: %d" % err.code)
+        print("Error message: %s" % err.reason)
+    except RuntimeError as err:
         print("A fault occurred")
-        print("Fault code: %d" % err.faultCode)
-        print("Fault string: %s" % err.faultString)
+        print(str(err))
 
 
 def hide_password(url, start=6):
-    """Returns the http url with password part replaced with '*'.
-
-    :param url: URL to upload the plugin to.
-    :type url: str
-
-    :param start: Position of start of password.
-    :type start: int
-    """
+    """Returns the http url with password part replaced with '*'."""
     start_position = url.find(":", start) + 1
     end_position = url.find("@")
     return "%s%s%s" % (
@@ -108,10 +134,8 @@ if __name__ == "__main__":
     if not options.port:
         options.port = PORT
     if not options.username:
-        # interactive mode
         username = getpass.getuser()
         options.username = input("Please enter user name [%s] :" % username) or username
     if not options.password:
-        # interactive mode
         options.password = getpass.getpass()
     main(options, args)
