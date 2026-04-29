@@ -460,11 +460,13 @@ def zip(config_file, quick):
             # click.secho("Current directory is {}".format(os.getcwd()), fg='magenta')
             if use_7z:
                 subprocess.check_call(
-                    [zip, "a", "-r", os.path.join(cwd, "{0}.zip".format(name)), name]
+                    [zip, "a", "-r", os.path.join(cwd, "{0}.zip".format(name)), name,
+                     "-xr!__pycache__", "-xr!*.pyc"]
                 )
             else:
                 subprocess.check_call(
-                    [zip, "-r", os.path.join(cwd, "{0}.zip".format(name)), name]
+                    [zip, "-r", os.path.join(cwd, "{0}.zip".format(name)), name,
+                     "-x", "*/__pycache__/*", "-x", "*/*.pyc"]
                 )
 
             print(
