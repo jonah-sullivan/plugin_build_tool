@@ -56,7 +56,7 @@ pbt deploy
 
 ## Configuration
 
-pb_tool requires a `pb_tool.cfg` file in your plugin's root directory. [Plugin Builder](https://plugins.qgis.org/plugins/pluginbuilder3/) generates this automatically. You can also create one by hand using the template below.
+pb_tool requires a `pb_tool.cfg` file in your plugin's root directory. [Plugin Builder](https://plugins.qgis.org/plugins/pluginbuilder4/) generates this automatically. You can also create one by hand using the template below.
 
 ```ini
 [plugin]
