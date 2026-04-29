@@ -1,6 +1,10 @@
 # pb_tool
 
-[![PyPI version](https://badge.fury.io/py/pb_tool.svg)](https://badge.fury.io/py/pb_tool)
+[![PyPI](https://img.shields.io/pypi/v/pb-tool)](https://pypi.org/project/pb-tool/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pb-tool)](https://pypi.org/project/pb-tool/)
+[![Downloads](https://img.shields.io/pypi/dm/pb-tool)](https://pypistats.org/packages/pb-tool)
+![Tests](https://github.com/jonah-sullivan/plugin_build_tool/workflows/Tests/badge.svg)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 
 A command-line tool for building and deploying QGIS Python plugins. pb_tool handles compiling UI and resource files, building Sphinx documentation, managing translations, deploying to your local QGIS plugin directory, and packaging for the QGIS Plugin Repository.
 
