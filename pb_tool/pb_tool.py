@@ -29,7 +29,6 @@ import fnmatch
 import glob
 import json
 import http.client
-import urllib.error
 import configparser
 from string import Template
 
@@ -422,7 +421,13 @@ def zip(config_file, quick):
         zip = check_path("7z")
         if not zip:
             click.secho("zip or 7z not found. Unable to package the plugin", fg="red")
-            click.secho("Check your path or install a zip program", fg="red")
+            if sys.platform == "win32":
+                click.secho(
+                    "Install 7-Zip (https://www.7-zip.org) or ensure Git for Windows is in your PATH.",
+                    fg="red",
+                )
+            else:
+                click.secho("Install zip (e.g. apt install zip) or 7-Zip.", fg="red")
             return
         else:
             use_7z = True
@@ -777,9 +782,9 @@ def update():
         elif this_version > current_version:
             click.secho("You have development Version %s" % __version(), fg="green")
 
-    except urllib.error.URLError as uoops:
+    except (http.client.HTTPException, OSError) as uoops:
         click.secho("Unable to check for update.")
-        click.secho("%s" % uoops.reason)
+        click.secho("%s" % uoops)
 
 
 def check_cfg(cfg, section, name):
@@ -858,6 +863,11 @@ def compile_files(cfg):
 
     if not pyuic:
         print("pyuic5/pyuic6 is not in your path---unable to compile your ui files")
+        if sys.platform == "win32":
+            print(
+                "On Windows, run pb_tool from the OSGeo4W shell, or add the OSGeo4W "
+                "bin directory to your PATH."
+            )
     else:
         print("Using Qt{0} ({1})".format(qt_version, pyuic))
         ui_files = cfg.get("files", "compiled_ui_files").split()
@@ -884,6 +894,12 @@ def compile_files(cfg):
             "rcc is not in your path---unable to compile your resource file(s)",
             fg="red",
         )
+        if sys.platform == "win32":
+            click.secho(
+                "On Windows, run pb_tool from the OSGeo4W shell, or add the OSGeo4W "
+                "bin directory to your PATH.",
+                fg="red",
+            )
     else:
         res_files = cfg.get("files", "resource_files").split()
         res_count = 0
@@ -895,7 +911,7 @@ def compile_files(cfg):
                     print("Compiling {0} to {1}".format(res, output))
                     cmd = []
                     if qt_version == 6:
-                        cmd += ["rcc", "-g", "python"]
+                        cmd += [rcc, "-g", "python"]
                     if qt_version == 5:
                         pyrcc5 = check_path("pyrcc5")
                         if pyrcc5:
