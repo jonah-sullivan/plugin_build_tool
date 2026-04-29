@@ -517,12 +517,7 @@ def validate(config_file):
     else:
         click.secho("Your {0} file is invalid".format(config_file), fg="red")
     try:
-        from qgis.PyQt.QtCore import QStandardPaths, QDir
-
-        path = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
-        plugin_path = os.path.join(
-            QDir.homePath(), path, "QGIS/QGIS3/profiles/default/python/plugins"
-        )
+        plugin_path = get_plugin_directory()
         click.secho("Plugin path: {}".format(plugin_path), fg="green")
     except Exception:
         click.secho(
