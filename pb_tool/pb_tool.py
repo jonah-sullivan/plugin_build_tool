@@ -83,15 +83,10 @@ def get_install_files(cfg):
     python_files = cfg.get("files", "python_files").split()
     main_dialog = cfg.get("files", "main_dialog").split()
     extras = cfg.get("files", "extras").split()
-    install_files = (
-        python_files + main_dialog + compiled_ui(cfg) + compiled_resource(cfg) + extras
-    )
+    install_files = python_files + main_dialog + compiled_ui(cfg) + compiled_resource(cfg) + extras
     exclusions = cfg.get("files", "excluded_files", fallback="").split()
     if exclusions:
-        install_files = [
-            f for f in install_files
-            if not any(fnmatch.fnmatch(f, pat) for pat in exclusions)
-        ]
+        install_files = [f for f in install_files if not any(fnmatch.fnmatch(f, pat) for pat in exclusions)]
     return install_files
 
 
@@ -156,19 +151,20 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help
             click.secho("Doing quick deployment", fg="green")
             install_files(plugin_dir, cfg)
             click.secho(
-                "Quick deployment complete---if you have problems with your"
-                " plugin, try doing a full deploy.",
+                "Quick deployment complete---if you have problems with your plugin, try doing a full deploy.",
                 fg="green",
             )
 
         else:
             if confirm:
                 docs_line = "                * Build the help docs\n" if build_help else ""
-                print("""Deploying will:
+                print(
+                    """Deploying will:
                 * Remove your currently deployed version
                 * Compile the ui and resource files
 {0}                * Copy everything to your {1} directory
-                """.format(docs_line, plugin_dir))
+                """.format(docs_line, plugin_dir)
+                )
 
                 proceed = click.confirm("Proceed?")
             else:
@@ -211,9 +207,7 @@ def install_files(plugin_dir, cfg):
             nl=False,
         )
         try:
-            shutil.copytree(
-                xdir, os.path.join(plugin_dir, xdir), dirs_exist_ok=True
-            )
+            shutil.copytree(xdir, os.path.join(plugin_dir, xdir), dirs_exist_ok=True)
             print()
         except Exception as oops:
             errors.append("Error copying directory: {0}, {1}".format(xdir, str(oops)))
@@ -222,9 +216,7 @@ def install_files(plugin_dir, cfg):
     help_src = cfg.get("help", "dir")
     if os.path.exists(help_src):
         help_target = os.path.join(plugin_dir, cfg.get("help", "target"))
-        click.secho(
-            "Copying {0} to {1}".format(help_src, help_target), fg="magenta", nl=False
-        )
+        click.secho("Copying {0} to {1}".format(help_src, help_target), fg="magenta", nl=False)
         try:
             shutil.copytree(help_src, help_target, dirs_exist_ok=True)
             print()
@@ -233,9 +225,7 @@ def install_files(plugin_dir, cfg):
             click.echo(click.style(" ----> ERROR", fg="red"))
             fail = True
     else:
-        click.secho(
-            "No help found at {0}, skipping".format(help_src), fg="yellow"
-        )
+        click.secho("No help found at {0}, skipping".format(help_src), fg="yellow")
     if fail:
         print("\nERRORS:")
         for error in errors:
@@ -257,9 +247,7 @@ def clean_deployment(ask_first=True, config="pb_tool.cfg", plugin_dir=None):
         name = get_config(config).get("plugin", "name")
         plugin_dir = os.path.join(get_plugin_directory(), name)
     if ask_first:
-        proceed = click.confirm(
-            "Delete the deployed plugin from {0}?".format(plugin_dir)
-        )
+        proceed = click.confirm("Delete the deployed plugin from {0}?".format(plugin_dir))
     else:
         proceed = True
 
@@ -373,10 +361,7 @@ def translate(config):
     the i18n directory of your plugin."""
     cmd = check_path("lrelease")
     if not cmd:
-        print(
-            "Unable to find the lrelease command. Make sure it is installed"
-            " and in your path."
-        )
+        print("Unable to find the lrelease command. Make sure it is installed and in your path.")
         if sys.platform == "win32":
             print(
                 "You can get lrelease by installing"
@@ -466,21 +451,37 @@ def zip(config_file, quick):
             # click.secho("Current directory is {}".format(os.getcwd()), fg='magenta')
             if use_7z:
                 subprocess.check_call(
-                    [zip, "a", "-r", os.path.join(cwd, "{0}.zip".format(name)), name,
-                     "-xr!__pycache__", "-xr!*.pyc", "-xr!.buildinfo", "-xr!.buildinfo.bak"]
+                    [
+                        zip,
+                        "a",
+                        "-r",
+                        os.path.join(cwd, "{0}.zip".format(name)),
+                        name,
+                        "-xr!__pycache__",
+                        "-xr!*.pyc",
+                        "-xr!.buildinfo",
+                        "-xr!.buildinfo.bak",
+                    ]
                 )
             else:
                 subprocess.check_call(
-                    [zip, "-r", os.path.join(cwd, "{0}.zip".format(name)), name,
-                     "-x", "*/__pycache__/*", "-x", "*/*.pyc",
-                     "-x", "*/.buildinfo", "-x", "*/.buildinfo.bak"]
+                    [
+                        zip,
+                        "-r",
+                        os.path.join(cwd, "{0}.zip".format(name)),
+                        name,
+                        "-x",
+                        "*/__pycache__/*",
+                        "-x",
+                        "*/*.pyc",
+                        "-x",
+                        "*/.buildinfo",
+                        "-x",
+                        "*/.buildinfo.bak",
+                    ]
                 )
 
-            print(
-                "The {0}.zip archive has been created in the current directory".format(
-                    name
-                )
-            )
+            print("The {0}.zip archive has been created in the current directory".format(name))
         else:
             click.echo("Your config file is missing the plugin name (name=parameter)")
 
@@ -515,9 +516,7 @@ def validate(config_file):
     click.secho("Using Python {}".format(sys.version), fg="green")
     if valid:
         click.secho(
-            "Your {0} file is valid and contains all mandatory items".format(
-                config_file
-            ),
+            "Your {0} file is valid and contains all mandatory items".format(config_file),
             fg="green",
         )
     else:
@@ -546,17 +545,6 @@ def validate(config_file):
         click.secho("Check your path or install a zip program", fg="red")
     else:
         click.secho("Found suitable zip utility: {}".format(zip_utility), fg="green")
-    # check for templates - uncomment next 4 after create function is done
-    # print(__file__)
-    # print("Module: {}".format (sys.modules['pb_tool']))
-    # basic_tmpl = pkgutil.get_data('pb_tool', 'templates/basic.tmpl')
-    # print("Read basic template: {}".format(str(basic_tmpl, 'utf-8')))
-
-    # f = open('pb_tool/templates/basic.tmpl')
-    # if f:
-    #     print("opened basic.tmpl")
-    # else:
-    #     print("unable to find basic.tmpl")
 
 
 @cli.command()
@@ -612,9 +600,7 @@ def config(name, package):
     if package:
         cfg_name = package
     else:
-        cfg_name = click.prompt(
-            "Name of package (lower case). This will be used as the directory name for deployment"
-        )
+        cfg_name = click.prompt("Name of package (lower case). This will be used as the directory name for deployment")
 
     # get the list of python files
     py_files = glob.glob("*.py")
@@ -785,8 +771,9 @@ def create(plugin_type, name, class_name, title, description, author, email):
         click.secho("Created {0}".format(cfg_path), fg="green")
 
     click.secho(
-        "\nPlugin skeleton created in '{0}/'. "
-        "Add a metadata.txt and run pb_tool deploy to get started.".format(out_dir),
+        "\nPlugin skeleton created in '{0}/'. Add a metadata.txt and run pb_tool deploy to get started.".format(
+            out_dir
+        ),
         fg="green",
     )
 
@@ -825,9 +812,7 @@ def check_cfg(cfg, section, name):
     except configparser.NoOptionError as oops:
         print(str(oops))
     except configparser.NoSectionError:
-        print(
-            "Missing section '{0}' when looking for option '{1}'".format(section, name)
-        )
+        print("Missing section '{0}' when looking for option '{1}'".format(section, name))
     return False
 
 
@@ -895,10 +880,7 @@ def compile_files(cfg):
     if not pyuic:
         print("pyuic5/pyuic6 is not in your path---unable to compile your ui files")
         if sys.platform == "win32":
-            print(
-                "On Windows, run pb_tool from the OSGeo4W shell, or add the OSGeo4W "
-                "bin directory to your PATH."
-            )
+            print("On Windows, run pb_tool from the OSGeo4W shell, or add the OSGeo4W bin directory to your PATH.")
     else:
         print("Using Qt{0} ({1})".format(qt_version, pyuic))
         ui_files = cfg.get("files", "compiled_ui_files").split()
@@ -927,8 +909,7 @@ def compile_files(cfg):
         )
         if sys.platform == "win32":
             click.secho(
-                "On Windows, run pb_tool from the OSGeo4W shell, or add the OSGeo4W "
-                "bin directory to your PATH.",
+                "On Windows, run pb_tool from the OSGeo4W shell, or add the OSGeo4W bin directory to your PATH.",
                 fg="red",
             )
     else:
@@ -953,9 +934,7 @@ def compile_files(cfg):
                     subprocess.check_call(cmd)
                     with open(output, "r") as f:
                         content = f.read()
-                    content = content.replace(
-                        "from PySide6 import QtCore", "from qgis.PyQt import QtCore"
-                    )
+                    content = content.replace("from PySide6 import QtCore", "from qgis.PyQt import QtCore")
                     with open(output, "w") as f:
                         f.write(content)
                     res_count += 1
