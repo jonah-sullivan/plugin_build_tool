@@ -20,20 +20,21 @@
 
 __author__ = "gsherman"
 
-import os
-import sys
-import subprocess
-import shutil
+import configparser
 import errno
 import fnmatch
 import glob
-import json
 import http.client
-import configparser
+import json
+import os
+import shutil
+import subprocess
+import sys
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 from string import Template
 
 import click
-from importlib.metadata import version as _pkg_version, PackageNotFoundError
 
 
 class AliasedGroup(click.Group):
