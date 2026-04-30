@@ -125,12 +125,44 @@ def test_create_dialog_files():
             os.path.join("my_plugin", "my_plugin.py"),
             os.path.join("my_plugin", "my_plugin_dialog.py"),
             os.path.join("my_plugin", "my_plugin_dialog_base.ui"),
-            os.path.join("my_plugin", "resources.qrc"),
+            os.path.join("my_plugin", "icon.png"),
             os.path.join("my_plugin", "README.md"),
             os.path.join("my_plugin", "pb_tool.cfg"),
         ]:
             assert os.path.exists(expected), f"{expected} was not created"
         with open(os.path.join("my_plugin", "my_plugin_dialog.py")) as f:
+            content = f.read()
+        assert "MyPlugin" in content
+        assert "$Template" not in content
+
+
+def test_create_dockwidget_files():
+    """create --type dockwidget produces the expected files with substituted content."""
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            pb_tool.cli,
+            [
+                "create",
+                "--type", "dockwidget",
+                "--name", "my_plugin",
+                "--class_name", "MyPlugin",
+                "--description", "A test plugin",
+                "--author", "Test Author",
+                "--email", "test@example.com",
+            ],
+        )
+        assert result.exit_code == 0
+        for expected in [
+            os.path.join("my_plugin", "__init__.py"),
+            os.path.join("my_plugin", "my_plugin.py"),
+            os.path.join("my_plugin", "my_plugin_dockwidget.py"),
+            os.path.join("my_plugin", "my_plugin_dockwidget_base.ui"),
+            os.path.join("my_plugin", "icon.png"),
+            os.path.join("my_plugin", "README.md"),
+            os.path.join("my_plugin", "pb_tool.cfg"),
+        ]:
+            assert os.path.exists(expected), f"{expected} was not created"
+        with open(os.path.join("my_plugin", "my_plugin_dockwidget.py")) as f:
             content = f.read()
         assert "MyPlugin" in content
         assert "$Template" not in content

@@ -667,34 +667,69 @@ def config(name, package):
 @click.option(
     "--type",
     "plugin_type",
-    type=click.Choice(["processing", "dialog"], case_sensitive=False),
+    type=click.Choice(["processing", "dialog", "dockwidget"], case_sensitive=False),
     default="processing",
     help="Type of plugin skeleton to create",
 )
 @click.option("--name", default=None, help="Plugin module name (snake_case)")
 @click.option("--class_name", default=None, help="Plugin class name (CamelCase)")
+@click.option("--title", default=None, help="Human-readable plugin title (used in menus)")
 @click.option("--description", default=None, help="Short plugin description")
 @click.option("--author", default=None, help="Author name")
 @click.option("--email", default=None, help="Author email")
-def create(plugin_type, name, class_name, description, author, email):
+def create(plugin_type, name, class_name, title, description, author, email):
     """Create a new plugin skeleton from a template"""
+    import shutil
     from datetime import date
 
     name = name or click.prompt("Module name (snake_case, used as directory name)")
     class_name = class_name or click.prompt("Class name (CamelCase)")
+    title = title or click.prompt("Plugin title (shown in menus)", default=class_name)
     description = description or click.prompt("Description")
     author = author or click.prompt("Author")
     email = email or click.prompt("Email")
 
+    # Per-type substitution variables for pb_tool.cfg template
+    type_cfg = {
+        "dialog": {
+            "TemplatePyFiles": "{0}_dialog.py".format(name),
+            "TemplateUiFiles": "{0}_dialog_base.ui".format(name),
+            "TemplateExtraFiles": "icon.png",
+        },
+        "dockwidget": {
+            "TemplatePyFiles": "{0}_dockwidget.py".format(name),
+            "TemplateUiFiles": "{0}_dockwidget_base.ui".format(name),
+            "TemplateExtraFiles": "icon.png",
+        },
+        "processing": {
+            "TemplatePyFiles": "{0}_provider.py {0}_algorithm.py".format(name),
+            "TemplateUiFiles": "",
+            "TemplateExtraFiles": "icon.png",
+        },
+    }
+
     subs = {
         "TemplateModuleName": name,
         "TemplateClass": class_name,
+        "TemplateTitle": title,
+        "TemplateMenuText": title,
         "TemplateDescription": description,
         "TemplateAuthor": author,
         "TemplateEmail": email,
         "TemplateYear": str(date.today().year),
         "TemplateBuildDate": date.today().isoformat(),
         "TemplateVCSFormat": "$Format:%H$",
+        # dialog / dockwidget menu wiring
+        "TemplateMenuAddMethod": "addPluginToMenu",
+        "TemplateMenuRemoveMethod": "removePluginMenu",
+        # dockwidget dock area
+        "TemplateDockWidgetArea": "Qt.RightDockWidgetArea",
+        # processing provider / algorithm identifiers
+        "TemplateAlgoName": name,
+        "TemplateAlgoGroup": name,
+        "TemplateProviderName": name,
+        # pb_tool.cfg placeholders
+        **type_cfg[plugin_type],
     }
 
     tmpl_dir = os.path.join(os.path.dirname(__file__), "templates", plugin_type)
@@ -715,12 +750,11 @@ def create(plugin_type, name, class_name, description, author, email):
         "module_name_algorithm.tmpl": "{0}_algorithm.py".format(name),
         "module_name_dialog.tmpl": "{0}_dialog.py".format(name),
         "module_name_dialog_base.ui.tmpl": "{0}_dialog_base.ui".format(name),
-        "resources.tmpl": "resources.qrc",
+        "module_name_dockwidget.tmpl": "{0}_dockwidget.py".format(name),
+        "module_name_dockwidget_base.ui.tmpl": "{0}_dockwidget_base.ui".format(name),
         "readme.tmpl": "README.md",
-        "results.tmpl": "results.py",
     }
 
-    created_py = []
     for tmpl_file, out_file in file_map.items():
         tmpl_path = os.path.join(tmpl_dir, tmpl_file)
         if not os.path.exists(tmpl_path):
@@ -731,23 +765,19 @@ def create(plugin_type, name, class_name, description, author, email):
         with open(out_path, "w") as f:
             f.write(content)
         click.secho("Created {0}".format(out_path), fg="green")
-        if out_file.endswith(".py"):
-            created_py.append(out_file)
 
-    # generate pb_tool.cfg with the correct python_files already populated
+    # copy icon.png from templates root into the output directory
+    icon_src = os.path.join(os.path.dirname(__file__), "templates", "icon.png")
+    if os.path.exists(icon_src):
+        icon_dst = os.path.join(out_dir, "icon.png")
+        shutil.copy2(icon_src, icon_dst)
+        click.secho("Created {0}".format(icon_dst), fg="green")
+
+    # generate pb_tool.cfg
     pb_tool_tmpl_path = os.path.join(os.path.dirname(__file__), "templates", "pb_tool.tmpl")
     if os.path.exists(pb_tool_tmpl_path):
         with open(pb_tool_tmpl_path) as f:
-            cfg_content = Template(f.read()).safe_substitute(dict(
-                subs,
-                TemplateModuleName=name,
-            ))
-        # replace the stub python_files line with the actual generated files
-        py_files_line = "python_files: {0}".format(" ".join(created_py))
-        cfg_content = cfg_content.replace(
-            "python_files: __init__.py {0}.py".format(name),
-            py_files_line,
-        )
+            cfg_content = Template(f.read()).safe_substitute(subs)
         cfg_path = os.path.join(out_dir, "pb_tool.cfg")
         with open(cfg_path, "w") as f:
             f.write(cfg_content)

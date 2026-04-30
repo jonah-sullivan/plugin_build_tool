@@ -10,22 +10,23 @@ $TemplateDescription
    pb_tool deploy
    ```
 3. Enable the plugin in the QGIS Plugin Manager.
-4. Click the **$TemplateMenuText** toolbar icon to open the dialog.
+4. Click the **$TemplateMenuText** toolbar icon to open the dock widget.
 
 ## Files
 
 | File | Purpose |
 |---|---|
 | `__init__.py` | Plugin entry point, registers the plugin with QGIS |
-| `${TemplateModuleName}.py` | Main plugin class, toolbar action, dialog lifecycle |
-| `${TemplateModuleName}_dialog.py` | Dialog class loaded from the `.ui` file |
-| `${TemplateModuleName}_dialog_base.ui` | Qt Designer UI file — edit this to change the dialog layout |
+| `${TemplateModuleName}.py` | Main plugin class, toolbar action, dockwidget lifecycle |
+| `${TemplateModuleName}_dockwidget.py` | DockWidget class loaded from the `.ui` file |
+| `${TemplateModuleName}_dockwidget_base.ui` | Qt Designer UI file — edit this to change the dock widget layout |
 | `icon.png` | Toolbar icon |
 
 ## Customising
 
-- Open `${TemplateModuleName}_dialog_base.ui` in Qt Designer to modify the dialog.
+- Open `${TemplateModuleName}_dockwidget_base.ui` in Qt Designer to modify the dock widget.
 - Add your logic to the `run()` method in `${TemplateModuleName}.py`.
+- The dock widget emits `closingPlugin` when the user closes it; `onClosePlugin` handles cleanup.
 
 ## Further reading
 
