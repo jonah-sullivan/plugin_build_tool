@@ -422,7 +422,7 @@ pip install --ignore-installed Pygments pb_tool
 
 ## Contributing
 
-Issues and pull requests: <https://github.com/g-sherman/plugin_build_tool>
+Issues and pull requests: <https://github.com/jonah-sullivan/plugin_build_tool>
 
 ---
 
