@@ -18,7 +18,7 @@
  ***************************************************************************/
 """
 
-__author__ = "gsherman"
+__author__ = "jonah-sullivan"
 
 import configparser
 import errno
