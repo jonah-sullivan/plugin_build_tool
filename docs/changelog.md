@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+---
+
+## [3.4.0] - 2026-05-24
+
 ### Added
 - New `dockwidget` plugin type: `pb_tool create --type dockwidget` generates a toolbar button plugin with a dock widget panel
 - `--title` option to `pb_tool create` for the human-readable plugin name shown in QGIS menus (distinct from the Python class name)
@@ -13,6 +17,10 @@
     - **Processing plugins:** main class renamed to `*Plugin` and no longer takes `iface`; added `__author__`/`__date__`/`__copyright__`/`__revision__` module attributes; algorithm uses `self.tr()`, `QgsFeatureSink.FastInsert`, and correct `100.0 / featureCount` progress tracking; provider gains `__init__`, `unload`, `icon()`, and `longName()`
     - **`pb_tool.cfg`:** updated with `plugin_path:` field, `LICENSE` in extras, and correct `python_files`/`main_dialog` values populated per plugin type
 - `resources.qrc` is no longer generated (Qt resource system not needed now that the icon uses a filesystem path)
+- `sphinx` moved to optional `docs` dependency group
+
+### Fixed
+- Dialog template uses `exec()` instead of deprecated `exec_()` for Qt6/QGIS 4 compatibility
 
 ### Removed
 - `test_plugin` directory removed from the repository; tests now generate a temporary plugin in an isolated filesystem
