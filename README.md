@@ -1,10 +1,12 @@
 # pb_tool
 
-[![PyPI](https://img.shields.io/pypi/v/pb-tool)](https://pypi.org/project/pb-tool/)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pb-tool)](https://pypi.org/project/pb-tool/)
-[![Downloads](https://img.shields.io/pypi/dm/pb-tool)](https://pypistats.org/packages/pb-tool)
-![Tests](https://github.com/jonah-sullivan/plugin_build_tool/workflows/Tests/badge.svg)
+[![Tests](https://github.com/jonah-sullivan/plugin_build_tool/actions/workflows/test.yml/badge.svg?branch=qgis4-version)](https://github.com/jonah-sullivan/plugin_build_tool/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/jonah-sullivan/plugin_build_tool/qgis4-version)](https://codecov.io/gh/jonah-sullivan/plugin_build_tool?branch=qgis4-version)
+[![PyPI version](https://img.shields.io/pypi/v/pb-tool)](https://pypi.org/project/pb-tool/)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+[![Lint: Ruff](https://img.shields.io/badge/linting-ruff-red?logo=ruff)](https://docs.astral.sh/ruff/)
+[![QGIS](https://img.shields.io/badge/QGIS-3%20%26%204-green?logo=qgis)](https://qgis.org/)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey)](https://github.com/jonah-sullivan/plugin_build_tool)
 
 A command-line tool for building and deploying QGIS Python plugins. pb_tool handles compiling UI and resource files, building Sphinx documentation, managing translations, deploying to your local QGIS plugin directory, and packaging for the QGIS Plugin Repository.
 
