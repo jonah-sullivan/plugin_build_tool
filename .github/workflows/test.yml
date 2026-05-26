@@ -34,10 +34,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest test_pb_tool.py -v \
-            --cov=pb_tool \
-            --cov-report=term-missing \
-            --cov-report=xml:coverage.xml
+          pytest test_pb_tool.py -v --cov=pb_tool --cov-report=term-missing --cov-report=xml:coverage.xml
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest'
