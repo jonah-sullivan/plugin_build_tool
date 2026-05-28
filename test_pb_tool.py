@@ -1,6 +1,7 @@
 import os
 
 from click.testing import CliRunner
+
 from pb_tool import pb_tool
 
 runner = CliRunner()
@@ -62,12 +63,18 @@ def test_create():
             pb_tool.cli,
             [
                 "create",
-                "--name", "my_plugin",
-                "--class_name", "MyPlugin",
-                "--title", "My Plugin",
-                "--description", "A test plugin",
-                "--author", "Test Author",
-                "--email", "test@example.com",
+                "--name",
+                "my_plugin",
+                "--class_name",
+                "MyPlugin",
+                "--title",
+                "My Plugin",
+                "--description",
+                "A test plugin",
+                "--author",
+                "Test Author",
+                "--email",
+                "test@example.com",
             ],
         )
         assert result.exit_code == 0
@@ -80,13 +87,20 @@ def test_create_processing_files():
             pb_tool.cli,
             [
                 "create",
-                "--type", "processing",
-                "--name", "my_plugin",
-                "--class_name", "MyPlugin",
-                "--title", "My Plugin",
-                "--description", "A test plugin",
-                "--author", "Test Author",
-                "--email", "test@example.com",
+                "--type",
+                "processing",
+                "--name",
+                "my_plugin",
+                "--class_name",
+                "MyPlugin",
+                "--title",
+                "My Plugin",
+                "--description",
+                "A test plugin",
+                "--author",
+                "Test Author",
+                "--email",
+                "test@example.com",
             ],
         )
         assert result.exit_code == 0
@@ -113,13 +127,20 @@ def test_create_dialog_files():
             pb_tool.cli,
             [
                 "create",
-                "--type", "dialog",
-                "--name", "my_plugin",
-                "--class_name", "MyPlugin",
-                "--title", "My Plugin",
-                "--description", "A test plugin",
-                "--author", "Test Author",
-                "--email", "test@example.com",
+                "--type",
+                "dialog",
+                "--name",
+                "my_plugin",
+                "--class_name",
+                "MyPlugin",
+                "--title",
+                "My Plugin",
+                "--description",
+                "A test plugin",
+                "--author",
+                "Test Author",
+                "--email",
+                "test@example.com",
             ],
         )
         assert result.exit_code == 0
@@ -146,13 +167,20 @@ def test_create_dockwidget_files():
             pb_tool.cli,
             [
                 "create",
-                "--type", "dockwidget",
-                "--name", "my_plugin",
-                "--class_name", "MyPlugin",
-                "--title", "My Plugin",
-                "--description", "A test plugin",
-                "--author", "Test Author",
-                "--email", "test@example.com",
+                "--type",
+                "dockwidget",
+                "--name",
+                "my_plugin",
+                "--class_name",
+                "MyPlugin",
+                "--title",
+                "My Plugin",
+                "--description",
+                "A test plugin",
+                "--author",
+                "Test Author",
+                "--email",
+                "test@example.com",
             ],
         )
         assert result.exit_code == 0
