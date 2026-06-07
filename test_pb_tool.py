@@ -1,4 +1,5 @@
 import os
+from unittest.mock import patch
 
 from click.testing import CliRunner
 
@@ -219,6 +220,63 @@ def test_zip():
             f.write(MINIMAL_CFG)
         result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
         assert result.exit_code == 0
+
+
+def test_patch_metadata_version_injection():
+    """patch_metadata stamps the release version into an existing version= field."""
+    with runner.isolated_filesystem():
+        with open("metadata.txt", "w") as f:
+            f.write("[general]\nname=TestPlugin\nversion=0.1\nauthor=Test\n")
+        with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
+            pb_tool.patch_metadata("metadata.txt", release_version="1.2.3")
+        with open("metadata.txt") as f:
+            result = f.read()
+    assert "version=1.2.3" in result
+    assert "version=0.1" not in result
+    assert "dateTime=" in result
+
+
+def test_patch_metadata_prerelease_sets_experimental():
+    """patch_metadata sets experimental=True when the version is a pre-release."""
+    with runner.isolated_filesystem():
+        with open("metadata.txt", "w") as f:
+            f.write("[general]\nname=TestPlugin\nversion=0.1\nexperimental=False\n")
+        with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
+            pb_tool.patch_metadata("metadata.txt", release_version="1.2.0-rc1")
+        with open("metadata.txt") as f:
+            result = f.read()
+    assert "version=1.2.0-rc1" in result
+    assert "experimental=True" in result
+    assert "experimental=False" not in result
+
+
+def test_patch_metadata_git_info():
+    """patch_metadata injects commitSha1 and commitNumber returned by get_git_info."""
+    with runner.isolated_filesystem():
+        with open("metadata.txt", "w") as f:
+            f.write("[general]\nname=TestPlugin\nversion=0.1\n")
+        with patch.object(pb_tool, "get_git_info", return_value=("abc123def456", 42)):
+            pb_tool.patch_metadata("metadata.txt")
+        with open("metadata.txt") as f:
+            result = f.read()
+    assert "commitSha1=abc123def456" in result
+    assert "commitNumber=42" in result
+    assert "dateTime=" in result
+
+
+def test_patch_metadata_appends_missing_fields():
+    """patch_metadata appends fields that don't already exist in the file."""
+    with runner.isolated_filesystem():
+        with open("metadata.txt", "w") as f:
+            f.write("[general]\nname=TestPlugin\nversion=0.1\n")
+        with patch.object(pb_tool, "get_git_info", return_value=("deadbeef", 99)):
+            pb_tool.patch_metadata("metadata.txt", release_version="2.0.0")
+        with open("metadata.txt") as f:
+            result = f.read()
+    assert "version=2.0.0" in result
+    assert "commitSha1=deadbeef" in result
+    assert "commitNumber=99" in result
+    assert "dateTime=" in result
 
 
 def test_dclean():

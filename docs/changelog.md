@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- `--release-version` option for `pb_tool zip`: stamps `version`, `commitSha1`, `commitNumber`, and `dateTime` into the deployed `metadata.txt` before creating the archive. Pre-release version strings (containing `rc`, `alpha`, `beta`, or `dev`) also set `experimental=True`. Fields that don't already exist in `metadata.txt` are appended automatically. The source `metadata.txt` is never modified.
+
 ---
 
 ## [3.4.0] - 2026-05-24

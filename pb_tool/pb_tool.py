@@ -394,7 +394,12 @@ def translate(config):
     is_flag=True,
     help="Do a quick packaging without dclean and deploy (plugin must have been previously deployed)",
 )
-def zip(config_file, quick):
+@click.option(
+    "--release-version",
+    default=None,
+    help="Stamp this version string into metadata.txt before packaging (e.g. 1.2.0)",
+)
+def zip(config_file, quick, release_version):
     """Package the plugin into a zip file
     suitable for uploading to the QGIS
     plugin repository"""
@@ -442,6 +447,14 @@ def zip(config_file, quick):
     #    'Create a packaged plugin ({0}.zip) from the deployed files?'.format(name))
     # confirm = True
     if proceed:
+        # inject version/git info into the deployed metadata.txt before zipping
+        metadata_path = os.path.join(get_plugin_directory(), name, "metadata.txt")
+        if os.path.exists(metadata_path):
+            patch_metadata(metadata_path, release_version)
+            click.secho("Patched metadata.txt with build info", fg="green")
+        elif release_version:
+            click.secho("Warning: metadata.txt not found in deployed plugin, skipping version injection", fg="yellow")
+
         # delete the zip if it exists
         if os.path.exists("{0}.zip".format(name)):
             os.unlink("{0}.zip".format(name))
@@ -1093,3 +1106,48 @@ def find_7z():
     # check for 7z
     zip = check_path("7z")
     return zip
+
+
+def get_git_info():
+    """Return (sha1, commit_count) from git, or (None, None) if not in a git repo."""
+    try:
+        sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+        count = subprocess.check_output(["git", "rev-list", "--count", "HEAD"], text=True).strip()
+        return sha, int(count)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None, None
+
+
+def patch_metadata(metadata_path, release_version=None):
+    """Inject version, git SHA, commit count, and datetime into a deployed metadata.txt."""
+    import re
+    from datetime import datetime, timezone
+
+    with open(metadata_path, encoding="utf-8") as f:
+        content = f.read()
+
+    def replace_or_append(text, key, value):
+        pattern = rf"^{re.escape(key)}=.*$"
+        new_line = f"{key}={value}"
+        if re.search(pattern, text, flags=re.M):
+            return re.sub(pattern, new_line, text, flags=re.M)
+        # append after [general] block if key not present
+        return re.sub(r"(\[general\][^\[]*)", rf"\1{new_line}\n", text, count=1, flags=re.S)
+
+    if release_version:
+        content = replace_or_append(content, "version", release_version)
+        is_prerelease = bool(re.search(r"[-.](?:rc|alpha|beta|dev)\d*", release_version, re.I))
+        if is_prerelease:
+            content = replace_or_append(content, "experimental", "True")
+
+    sha, count = get_git_info()
+    if sha:
+        content = replace_or_append(content, "commitSha1", sha)
+    if count is not None:
+        content = replace_or_append(content, "commitNumber", count)
+
+    date_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    content = replace_or_append(content, "dateTime", date_time)
+
+    with open(metadata_path, "w", encoding="utf-8") as f:
+        f.write(content)

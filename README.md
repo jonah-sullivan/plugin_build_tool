@@ -19,7 +19,7 @@ Supports **QGIS 3 and QGIS 4**, **Qt5 and Qt6**, and runs on **Linux, macOS, and
 - Scaffold a new plugin from a `processing`, `dialog`, or `dockwidget` template
 - Compile `.ui` and `.qrc` files (auto-detects `pyuic5`/`pyuic6` and `rcc`)
 - Deploy to your QGIS plugin directory for live testing
-- Package into a `.zip` for upload to the Plugin Repository
+- Package into a `.zip` for upload to the Plugin Repository, with optional version stamping of `metadata.txt`
 - Build and clean Sphinx HTML documentation
 - Compile translation files with `lrelease`
 - Clean compiled and deployed files
@@ -261,12 +261,42 @@ Locales must be listed under `[files] > locales` in your config, and the `.ts` f
 Package the deployed plugin into a `.zip` suitable for the QGIS Plugin Repository.
 
 ```bash
-pb_tool zip [--config_file pb_tool.cfg] [-q]
+pb_tool zip [--config_file pb_tool.cfg] [-q] [--release-version VERSION]
 ```
+
+| Option | Description |
+|---|---|
+| `--config_file FILE` | Config file to use (default: `pb_tool.cfg`) |
+| `-q, --quick` | Skip `dclean` + `deploy`; use the already-deployed copy |
+| `--release-version VERSION` | Stamp version and build info into `metadata.txt` before zipping |
 
 By default triggers a full `dclean` + `deploy` first. Use `-q` to skip that step if the plugin is already deployed and current.
 
 Requires `zip` or `7z` on your `PATH`.
+
+#### Version stamping
+
+When `--release-version` is provided, pb_tool patches the deployed `metadata.txt` before creating the archive:
+
+| Field | Value |
+|---|---|
+| `version` | The value passed to `--release-version` |
+| `commitSha1` | Full SHA of the current `HEAD` commit |
+| `commitNumber` | Total commit count (`git rev-list --count HEAD`) |
+| `dateTime` | Current UTC timestamp in ISO 8601 format |
+| `experimental` | Set to `True` if the version contains a pre-release tag (`rc`, `alpha`, `beta`, `dev`) |
+
+Fields that don't already exist in `metadata.txt` are appended automatically. The source `metadata.txt` in your project directory is never modified — only the deployed copy is patched.
+
+```bash
+# Package and stamp version 1.3.0
+pb_tool zip --release-version 1.3.0
+
+# Verify the result
+unzip -p MyPlugin.zip MyPlugin/metadata.txt | grep -E "^(version|commitSha1|commitNumber|dateTime)="
+```
+
+If `git` is not available (e.g. in a non-git directory), `commitSha1` and `commitNumber` are silently skipped; `version` and `dateTime` are still written.
 
 ---
 
@@ -397,8 +427,8 @@ pb_tool deploy -q
 # Validate your config and environment
 pb_tool validate
 
-# Package for the Plugin Repository
-pb_tool zip
+# Package for the Plugin Repository, stamping version and git info into metadata.txt
+pb_tool zip --release-version 1.3.0
 
 # Clean up compiled artefacts
 pb_tool clean
