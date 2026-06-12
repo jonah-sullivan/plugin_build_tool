@@ -139,6 +139,11 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help
         click.secho("Configuration file {0} is missing.".format(config_file), fg="red")
     else:
         cfg = get_config(config_file)
+
+        if not plugin_path:
+            plugin_path = cfg.get('plugin', 'plugin_path', fallback=None)
+            click.secho("Using plugin directory from pb_tool.cfg", fg='green')
+
         if not plugin_path:
             plugin_path = get_plugin_directory()
             if not plugin_path:
