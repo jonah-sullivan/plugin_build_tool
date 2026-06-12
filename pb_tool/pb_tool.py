@@ -129,7 +129,13 @@ def version():
 )
 def deploy(config_file, plugin_path, quick, no_confirm, no_docs):
     """Deploy the plugin to QGIS plugin directory using parameters in pb_tool.cfg"""
-    deploy_files(config_file, plugin_path, quick=quick, confirm=not no_confirm, build_help=not no_docs)
+    deploy_files(
+        config_file,
+        plugin_path,
+        quick=quick,
+        confirm=not no_confirm,
+        build_help=not no_docs,
+    )
 
 
 def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help=True):
@@ -141,8 +147,9 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help
         cfg = get_config(config_file)
 
         if not plugin_path:
-            plugin_path = cfg.get('plugin', 'plugin_path', fallback=None)
-            click.secho("Using plugin directory from pb_tool.cfg", fg='green')
+            plugin_path = cfg.get("plugin", "plugin_path", fallback=None)
+            if plugin_path:
+                click.secho("Using plugin directory from pb_tool.cfg", fg="green")
 
         if not plugin_path:
             plugin_path = get_plugin_directory()
@@ -458,7 +465,10 @@ def zip(config_file, quick, release_version):
             patch_metadata(metadata_path, release_version)
             click.secho("Patched metadata.txt with build info", fg="green")
         elif release_version:
-            click.secho("Warning: metadata.txt not found in deployed plugin, skipping version injection", fg="yellow")
+            click.secho(
+                "Warning: metadata.txt not found in deployed plugin, skipping version injection",
+                fg="yellow",
+            )
 
         # delete the zip if it exists
         if os.path.exists("{0}.zip".format(name)):
@@ -996,8 +1006,28 @@ def get_plugin_directory():
         ]
         default = candidates[0]
     else:
-        qgis4 = os.path.join(home, ".local", "share", "QGIS", "QGIS4", "profiles", "default", "python", "plugins")
-        qgis3 = os.path.join(home, ".local", "share", "QGIS", "QGIS3", "profiles", "default", "python", "plugins")
+        qgis4 = os.path.join(
+            home,
+            ".local",
+            "share",
+            "QGIS",
+            "QGIS4",
+            "profiles",
+            "default",
+            "python",
+            "plugins",
+        )
+        qgis3 = os.path.join(
+            home,
+            ".local",
+            "share",
+            "QGIS",
+            "QGIS3",
+            "profiles",
+            "default",
+            "python",
+            "plugins",
+        )
         candidates = [qgis4, qgis3]
         default = qgis4
     for path in candidates:
