@@ -140,10 +140,11 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help
     else:
         cfg = get_config(config_file)
 
-        plugin_path = cfg.get('plugin', 'plugin_path', fallback=None)
-        if plugin_path:
+        if not plugin_path:
+            plugin_path = cfg.get('plugin', 'plugin_path', fallback=None)
             click.secho("Using plugin directory from pb_tool.cfg", fg='green')
-        else:
+
+        if not plugin_path:
             plugin_path = get_plugin_directory()
             if not plugin_path:
                 click.secho("Unable to determine where to deploy your plugin", fg="red")
