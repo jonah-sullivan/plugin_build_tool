@@ -1,9 +1,16 @@
 # Changelog
 
-## [Unreleased]
+## [3.5.0] - 2026-07-17
 
 ### Added
 - `--release-version` option for `pb_tool zip`: stamps `version`, `commitSha1`, `commitNumber`, and `dateTime` into the deployed `metadata.txt` before creating the archive. Pre-release version strings (containing `rc`, `alpha`, `beta`, or `dev`) also set `experimental=True`. Fields that don't already exist in `metadata.txt` are appended automatically. The source `metadata.txt` is never modified.
+- `-p/--plugin_path` option for `pb_tool zip` and `pb_tool dclean`. All deploy-related commands now resolve the plugin directory the same way: `-p` option > `plugin_path` in `pb_tool.cfg` > default QGIS profile directory (#41)
+
+### Fixed
+- Fatal errors now exit with a non-zero code so scripts and CI can detect failures (#42): missing config file (`deploy`, `zip`, `list`), no zip/7z utility found (`zip`), missing plugin `name` in the config (`zip`), invalid config (`validate`), and missing templates (`create`)
+- `zip` and `dclean` no longer ignore a custom plugin path and zip the wrong (often empty) directory (#41)
+- `zip` restores the original working directory after packaging
+- `update` no longer crashes when the installed version cannot be determined
 
 ---
 
