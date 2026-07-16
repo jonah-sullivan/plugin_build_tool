@@ -229,8 +229,47 @@ def test_zip():
     with runner.isolated_filesystem():
         with open("pb_tool.cfg", "w") as f:
             f.write(MINIMAL_CFG)
-        result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
+        with (
+            patch.object(pb_tool, "check_path", return_value="zip"),
+            patch.object(pb_tool.subprocess, "check_call"),
+        ):
+            result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
         assert result.exit_code == 0
+
+
+def test_zip_no_zip_binary():
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG)
+        with patch.object(pb_tool, "check_path", return_value=None):
+            result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
+        assert result.exit_code != 0
+        assert "zip or 7z not found" in result.output
+
+
+def test_zip_missing_plugin_name():
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG.replace("name: TestPlugin", "name:"))
+        with patch.object(pb_tool, "check_path", return_value="zip"):
+            result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
+        assert result.exit_code != 0
+        assert "missing the plugin name" in result.output
+
+
+def test_deploy_missing_config():
+    with runner.isolated_filesystem():
+        result = runner.invoke(pb_tool.cli, ["deploy", "-y"])
+        assert result.exit_code != 0
+
+
+def test_validate_invalid_config():
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG.replace("main_dialog:\n", ""))
+        result = runner.invoke(pb_tool.cli, ["validate"])
+        assert result.exit_code != 0
+        assert "invalid" in result.output
 
 
 def test_patch_metadata_version_injection():
@@ -385,8 +424,18 @@ def test_zip_config_plugin_path_end_to_end():
 
 
 def test_list():
-    result = runner.invoke(pb_tool.cli, ["list"])
-    assert result.exit_code == 0
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG)
+        result = runner.invoke(pb_tool.cli, ["list"])
+        assert result.exit_code == 0
+        assert "TestPlugin" in result.output
+
+
+def test_list_missing_config():
+    with runner.isolated_filesystem():
+        result = runner.invoke(pb_tool.cli, ["list"])
+        assert result.exit_code != 0
 
 
 def test_update():

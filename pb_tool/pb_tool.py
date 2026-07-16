@@ -161,6 +161,7 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help
     # check for the config file
     if not os.path.exists(config_file):
         click.secho("Configuration file {0} is missing.".format(config_file), fg="red")
+        sys.exit(1)
     else:
         cfg = get_config(config_file)
 
@@ -455,13 +456,16 @@ def zip(config_file, quick, plugin_path, release_version):
                 )
             else:
                 click.secho("Install zip (e.g. apt install zip) or 7-Zip.", fg="red")
-            return
+            sys.exit(1)
         else:
             use_7z = True
     click.secho("Found zip: %s" % zip, fg="green")
 
     cfg = get_config(config_file)
     name = cfg.get("plugin", "name", fallback=None)
+    if not name:
+        click.secho("Your config file is missing the plugin name (name=parameter)", fg="red")
+        sys.exit(1)
     plugin_path = resolve_plugin_path(cfg, plugin_path)
     if not quick:
         proceed = click.confirm("This requires a dclean and deploy first. Proceed?")
@@ -499,46 +503,43 @@ def zip(config_file, quick, plugin_path, release_version):
         # delete the zip if it exists
         if os.path.exists("{0}.zip".format(name)):
             os.unlink("{0}.zip".format(name))
-        if name:
-            cwd = os.getcwd()
-            os.chdir(plugin_path)
-            # click.secho("Current directory is {}".format(os.getcwd()), fg='magenta')
-            if use_7z:
-                subprocess.check_call(
-                    [
-                        zip,
-                        "a",
-                        "-r",
-                        os.path.join(cwd, "{0}.zip".format(name)),
-                        name,
-                        "-xr!__pycache__",
-                        "-xr!*.pyc",
-                        "-xr!.buildinfo",
-                        "-xr!.buildinfo.bak",
-                    ]
-                )
-            else:
-                subprocess.check_call(
-                    [
-                        zip,
-                        "-r",
-                        os.path.join(cwd, "{0}.zip".format(name)),
-                        name,
-                        "-x",
-                        "*/__pycache__/*",
-                        "-x",
-                        "*/*.pyc",
-                        "-x",
-                        "*/.buildinfo",
-                        "-x",
-                        "*/.buildinfo.bak",
-                    ]
-                )
-            os.chdir(cwd)
-
-            print("The {0}.zip archive has been created in the current directory".format(name))
+        cwd = os.getcwd()
+        os.chdir(plugin_path)
+        # click.secho("Current directory is {}".format(os.getcwd()), fg='magenta')
+        if use_7z:
+            subprocess.check_call(
+                [
+                    zip,
+                    "a",
+                    "-r",
+                    os.path.join(cwd, "{0}.zip".format(name)),
+                    name,
+                    "-xr!__pycache__",
+                    "-xr!*.pyc",
+                    "-xr!.buildinfo",
+                    "-xr!.buildinfo.bak",
+                ]
+            )
         else:
-            click.echo("Your config file is missing the plugin name (name=parameter)")
+            subprocess.check_call(
+                [
+                    zip,
+                    "-r",
+                    os.path.join(cwd, "{0}.zip".format(name)),
+                    name,
+                    "-x",
+                    "*/__pycache__/*",
+                    "-x",
+                    "*/*.pyc",
+                    "-x",
+                    "*/.buildinfo",
+                    "-x",
+                    "*/.buildinfo.bak",
+                ]
+            )
+        os.chdir(cwd)
+
+        print("The {0}.zip archive has been created in the current directory".format(name))
 
 
 @cli.command()
@@ -601,6 +602,9 @@ def validate(config_file):
     else:
         click.secho("Found suitable zip utility: {}".format(zip_utility), fg="green")
 
+    if not valid:
+        sys.exit(1)
+
 
 @cli.command()
 @click.option(
@@ -620,6 +624,7 @@ def list(config_file):
             fg="red",
         )
         click.secho("We can't do anything without it", fg="red")
+        sys.exit(1)
 
 
 @cli.command()
@@ -777,7 +782,7 @@ def create(plugin_type, name, class_name, title, description, author, email):
     tmpl_dir = os.path.join(os.path.dirname(__file__), "templates", plugin_type)
     if not os.path.exists(tmpl_dir):
         click.secho("No templates found for type '{0}'".format(plugin_type), fg="red")
-        return
+        sys.exit(1)
 
     out_dir = name
     if os.path.exists(out_dir):
@@ -841,6 +846,9 @@ def update():
         conn.request("GET", "/pypi/pb_tool/json")
         version = json.loads(conn.getresponse().read())["info"]["version"]
         click.secho("Latest version is %s" % version, fg="green")
+        if __version() == "unknown":
+            click.secho("Unable to determine your installed version", fg="yellow")
+            return
         # convert version numbers to int
         this_version = int(__version().replace(".", ""))
         current_version = int(version.replace(".", ""))
