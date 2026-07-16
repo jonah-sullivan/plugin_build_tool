@@ -138,6 +138,24 @@ def deploy(config_file, plugin_path, quick, no_confirm, no_docs):
     )
 
 
+def resolve_plugin_path(cfg, plugin_path=None):
+    """Resolve the plugin deployment directory.
+
+    Precedence: explicit plugin_path (--plugin_path/-p) > plugin_path in the
+    [plugin] section of the config file > the default QGIS plugin directory.
+    Returns an absolute path.
+    """
+    if not plugin_path:
+        plugin_path = cfg.get("plugin", "plugin_path", fallback=None)
+        if plugin_path:
+            click.secho("Using plugin directory from pb_tool.cfg", fg="green")
+
+    if not plugin_path:
+        plugin_path = get_plugin_directory()
+
+    return os.path.abspath(plugin_path)
+
+
 def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help=True):
     """Deploy the plugin using parameters in pb_tool.cfg"""
     # check for the config file
@@ -146,16 +164,7 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help
     else:
         cfg = get_config(config_file)
 
-        if not plugin_path:
-            plugin_path = cfg.get("plugin", "plugin_path", fallback=None)
-            if plugin_path:
-                click.secho("Using plugin directory from pb_tool.cfg", fg="green")
-
-        if not plugin_path:
-            plugin_path = get_plugin_directory()
-            if not plugin_path:
-                click.secho("Unable to determine where to deploy your plugin", fg="red")
-                return
+        plugin_path = resolve_plugin_path(cfg, plugin_path)
 
         plugin_dir = os.path.join(plugin_path, cfg.get("plugin", "name"))
 
@@ -256,8 +265,8 @@ def install_files(plugin_dir, cfg):
 def clean_deployment(ask_first=True, config="pb_tool.cfg", plugin_dir=None):
     """Remove the deployed plugin from the .local/share/QGIS/QGIS4/profiles/default/python/plugins directory"""
     if not plugin_dir:
-        name = get_config(config).get("plugin", "name")
-        plugin_dir = os.path.join(get_plugin_directory(), name)
+        cfg = get_config(config)
+        plugin_dir = os.path.join(resolve_plugin_path(cfg), cfg.get("plugin", "name"))
     if ask_first:
         proceed = click.confirm("Delete the deployed plugin from {0}?".format(plugin_dir))
     else:
@@ -300,9 +309,18 @@ def clean_docs():
     default="pb_tool.cfg",
     help="Name of the config file to use if other than pb_tool.cfg",
 )
-def dclean(config):
-    """Remove the deployed plugin from the .local/share/QGIS/QGIS4/profiles/default/python/plugins directory"""
-    clean_deployment(True, config)
+@click.option(
+    "--plugin_path",
+    "-p",
+    default=None,
+    help="Specify the directory where your plugin is deployed if not using the standard location",
+)
+def dclean(config, plugin_path):
+    """Remove the deployed plugin from the QGIS plugin directory,
+    --plugin_path, or plugin_path in the config file"""
+    cfg = get_config(config)
+    plugin_dir = os.path.join(resolve_plugin_path(cfg, plugin_path), cfg.get("plugin", "name"))
+    clean_deployment(True, config, plugin_dir)
 
 
 @cli.command()
@@ -407,11 +425,17 @@ def translate(config):
     help="Do a quick packaging without dclean and deploy (plugin must have been previously deployed)",
 )
 @click.option(
+    "--plugin_path",
+    "-p",
+    default=None,
+    help="Specify the directory where your plugin is deployed if not using the standard location",
+)
+@click.option(
     "--release-version",
     default=None,
     help="Stamp this version string into metadata.txt before packaging (e.g. 1.2.0)",
 )
-def zip(config_file, quick, release_version):
+def zip(config_file, quick, plugin_path, release_version):
     """Package the plugin into a zip file
     suitable for uploading to the QGIS
     plugin repository"""
@@ -436,23 +460,25 @@ def zip(config_file, quick, release_version):
             use_7z = True
     click.secho("Found zip: %s" % zip, fg="green")
 
-    name = get_config(config_file).get("plugin", "name", fallback=None)
+    cfg = get_config(config_file)
+    name = cfg.get("plugin", "name", fallback=None)
+    plugin_path = resolve_plugin_path(cfg, plugin_path)
     if not quick:
         proceed = click.confirm("This requires a dclean and deploy first. Proceed?")
         if proceed:
             # clean_deployment(False, config)
-            deploy_files(config_file, plugin_path=None, confirm=False)
+            deploy_files(config_file, plugin_path=plugin_path, confirm=False)
     else:
         # Check to see if the plugin directory exists, otherwise we can't
         # do a quick zip
-        if not os.path.exists(os.path.join(get_plugin_directory(), name)):
+        if not os.path.exists(os.path.join(plugin_path, name)):
             # click.secho(
             #     "You must deploy the plugin before you can package it using -q",
             #     fg='red')
             # proceed = click.confirm(
             #     'Do you want to deploy and proceed with packaging?')
             # if proceed:
-            deploy_files(config_file, plugin_path=None, confirm=False)
+            deploy_files(config_file, plugin_path=plugin_path, confirm=False)
         proceed = True
 
     # confirm = click.confirm(
@@ -460,7 +486,7 @@ def zip(config_file, quick, release_version):
     # confirm = True
     if proceed:
         # inject version/git info into the deployed metadata.txt before zipping
-        metadata_path = os.path.join(get_plugin_directory(), name, "metadata.txt")
+        metadata_path = os.path.join(plugin_path, name, "metadata.txt")
         if os.path.exists(metadata_path):
             patch_metadata(metadata_path, release_version)
             click.secho("Patched metadata.txt with build info", fg="green")
@@ -475,7 +501,7 @@ def zip(config_file, quick, release_version):
             os.unlink("{0}.zip".format(name))
         if name:
             cwd = os.getcwd()
-            os.chdir(get_plugin_directory())
+            os.chdir(plugin_path)
             # click.secho("Current directory is {}".format(os.getcwd()), fg='magenta')
             if use_7z:
                 subprocess.check_call(
@@ -508,6 +534,7 @@ def zip(config_file, quick, release_version):
                         "*/.buildinfo.bak",
                     ]
                 )
+            os.chdir(cwd)
 
             print("The {0}.zip archive has been created in the current directory".format(name))
         else:

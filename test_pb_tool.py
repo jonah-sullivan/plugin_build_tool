@@ -1,6 +1,9 @@
+import configparser
 import os
+import shutil
 from unittest.mock import patch
 
+import pytest
 from click.testing import CliRunner
 
 from pb_tool import pb_tool
@@ -24,6 +27,14 @@ locales:
 dir: help/build/html
 target: help
 """
+
+CFG_WITH_PLUGIN_PATH = MINIMAL_CFG.replace("name: TestPlugin", "name: TestPlugin\nplugin_path: ./zip_build")
+
+
+def _read_cfg(text):
+    cfg = configparser.ConfigParser()
+    cfg.read_string(text)
+    return cfg
 
 
 def test_validate():
@@ -285,6 +296,92 @@ def test_dclean():
             f.write(MINIMAL_CFG)
         result = runner.invoke(pb_tool.cli, ["dclean"], input="y\n")
         assert result.exit_code == 0
+
+
+def test_resolve_plugin_path_cli_wins_over_config():
+    cfg = _read_cfg(CFG_WITH_PLUGIN_PATH)
+    result = pb_tool.resolve_plugin_path(cfg, "cli_path")
+    assert result == os.path.abspath("cli_path")
+
+
+def test_resolve_plugin_path_config_wins_over_default():
+    cfg = _read_cfg(CFG_WITH_PLUGIN_PATH)
+    with patch.object(pb_tool, "get_plugin_directory") as mock_default:
+        result = pb_tool.resolve_plugin_path(cfg)
+    mock_default.assert_not_called()
+    assert result == os.path.abspath("./zip_build")
+
+
+def test_resolve_plugin_path_falls_back_to_default():
+    cfg = _read_cfg(MINIMAL_CFG)
+    with patch.object(pb_tool, "get_plugin_directory", return_value="qgis_default"):
+        result = pb_tool.resolve_plugin_path(cfg)
+    assert result == os.path.abspath("qgis_default")
+
+
+def test_dclean_plugin_path_option():
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG)
+        os.makedirs(os.path.join("zip_build", "TestPlugin"))
+        with open(os.path.join("zip_build", "TestPlugin", "x.txt"), "w") as f:
+            f.write("x")
+        sentinel = os.path.abspath("default_qgis")
+        with patch.object(pb_tool, "get_plugin_directory", return_value=sentinel):
+            result = runner.invoke(pb_tool.cli, ["dclean", "-p", "zip_build"], input="y\n")
+        assert result.exit_code == 0
+        assert not os.path.exists(os.path.join("zip_build", "TestPlugin"))
+        assert not os.path.exists(sentinel)
+
+
+def test_dclean_config_plugin_path():
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(CFG_WITH_PLUGIN_PATH)
+        os.makedirs(os.path.join("zip_build", "TestPlugin"))
+        with open(os.path.join("zip_build", "TestPlugin", "x.txt"), "w") as f:
+            f.write("x")
+        sentinel = os.path.abspath("default_qgis")
+        with patch.object(pb_tool, "get_plugin_directory", return_value=sentinel):
+            result = runner.invoke(pb_tool.cli, ["dclean"], input="y\n")
+        assert result.exit_code == 0
+        assert "Using plugin directory from pb_tool.cfg" in result.output
+        assert not os.path.exists(os.path.join("zip_build", "TestPlugin"))
+        assert not os.path.exists(sentinel)
+
+
+def test_zip_plugin_path_option():
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG)
+        sentinel = os.path.abspath("default_qgis")
+        with (
+            patch.object(pb_tool, "check_path", return_value="zip"),
+            patch.object(pb_tool.subprocess, "check_call"),
+            patch.object(pb_tool, "get_plugin_directory", return_value=sentinel),
+        ):
+            result = runner.invoke(pb_tool.cli, ["zip", "-p", "zip_build"], input="y\n")
+        assert result.exit_code == 0
+        assert os.path.isdir(os.path.join("zip_build", "TestPlugin"))
+        assert not os.path.exists(sentinel)
+
+
+@pytest.mark.skipif(
+    shutil.which("zip") is None and shutil.which("7z") is None,
+    reason="zip/7z binary not available",
+)
+def test_zip_config_plugin_path_end_to_end():
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(CFG_WITH_PLUGIN_PATH)
+        sentinel = os.path.abspath("default_qgis")
+        with patch.object(pb_tool, "get_plugin_directory", return_value=sentinel):
+            result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
+        assert result.exit_code == 0
+        assert "Using plugin directory from pb_tool.cfg" in result.output
+        assert os.path.isdir(os.path.join("zip_build", "TestPlugin"))
+        assert os.path.exists("TestPlugin.zip")
+        assert not os.path.exists(sentinel)
 
 
 def test_list():

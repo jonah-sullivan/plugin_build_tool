@@ -261,13 +261,14 @@ Locales must be listed under `[files] > locales` in your config, and the `.ts` f
 Package the deployed plugin into a `.zip` suitable for the QGIS Plugin Repository.
 
 ```bash
-pb_tool zip [--config_file pb_tool.cfg] [-q] [--release-version VERSION]
+pb_tool zip [--config_file pb_tool.cfg] [-q] [-p PATH] [--release-version VERSION]
 ```
 
 | Option | Description |
 |---|---|
 | `--config_file FILE` | Config file to use (default: `pb_tool.cfg`) |
 | `-q, --quick` | Skip `dclean` + `deploy`; use the already-deployed copy |
+| `-p, --plugin_path PATH` | Directory the plugin is deployed to, if not the standard location |
 | `--release-version VERSION` | Stamp version and build info into `metadata.txt` before zipping |
 
 By default triggers a full `dclean` + `deploy` first. Use `-q` to skip that step if the plugin is already deployed and current.
@@ -342,8 +343,13 @@ pb_tool clean_docs
 Remove the deployed plugin from the QGIS plugins directory (prompts for confirmation).
 
 ```bash
-pb_tool dclean [--config pb_tool.cfg]
+pb_tool dclean [--config pb_tool.cfg] [-p PATH]
 ```
+
+| Option | Description |
+|---|---|
+| `--config FILE` | Config file to use (default: `pb_tool.cfg`) |
+| `-p, --plugin_path PATH` | Directory the plugin is deployed to, if not the standard location |
 
 ---
 
