@@ -30,6 +30,22 @@ target: help
 
 CFG_WITH_PLUGIN_PATH = MINIMAL_CFG.replace("name: TestPlugin", "name: TestPlugin\nplugin_path: ./zip_build")
 
+# Legacy-style config without a [help] section (see issue #43)
+LEGACY_CFG_NO_HELP = """
+[plugin]
+name: TestPlugin
+plugin_path: ./deploy_build
+
+[files]
+python_files: __init__.py
+main_dialog:
+compiled_ui_files:
+resource_files:
+extras:
+extra_dirs: bar
+locales:
+"""
+
 
 def _read_cfg(text):
     cfg = configparser.ConfigParser()
@@ -223,6 +239,33 @@ def test_deploy():
             f.write(MINIMAL_CFG)
         result = runner.invoke(pb_tool.cli, ["deploy"], input="y\n")
         assert result.exit_code == 0
+
+
+def _write_legacy_plugin_files():
+    with open("pb_tool.cfg", "w") as f:
+        f.write(LEGACY_CFG_NO_HELP)
+    with open("__init__.py", "w") as f:
+        f.write("")
+    os.makedirs("bar")
+    with open(os.path.join("bar", "baz.txt"), "w") as f:
+        f.write("baz")
+
+
+def test_deploy_quick_no_docs_without_help_section():
+    with runner.isolated_filesystem():
+        _write_legacy_plugin_files()
+        result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
+        assert result.exit_code == 0
+        assert os.path.exists(os.path.join("deploy_build", "TestPlugin", "__init__.py"))
+        assert os.path.exists(os.path.join("deploy_build", "TestPlugin", "bar", "baz.txt"))
+
+
+def test_deploy_full_without_help_section():
+    with runner.isolated_filesystem():
+        _write_legacy_plugin_files()
+        result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs"])
+        assert result.exit_code == 0
+        assert os.path.exists(os.path.join("deploy_build", "TestPlugin", "__init__.py"))
 
 
 def test_zip():

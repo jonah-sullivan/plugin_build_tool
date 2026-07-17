@@ -171,7 +171,7 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help
 
         if quick:
             click.secho("Doing quick deployment", fg="green")
-            install_files(plugin_dir, cfg)
+            install_files(plugin_dir, cfg, copy_help=build_help)
             click.secho(
                 "Quick deployment complete---if you have problems with your plugin, try doing a full deploy.",
                 fg="green",
@@ -201,16 +201,16 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help
                 compile_files(cfg)
                 if build_help:
                     build_docs()
-                install_files(plugin_dir, cfg)
+                install_files(plugin_dir, cfg, copy_help=build_help)
 
 
-def install_files(plugin_dir, cfg):
+def install_files(plugin_dir, cfg, copy_help=True):
     errors = []
     install_files = get_install_files(cfg)
     os.makedirs(plugin_dir, exist_ok=True)
 
     fail = False
-    extra_dirs = cfg.get("files", "extra_dirs").split()
+    extra_dirs = cfg.get("files", "extra_dirs", fallback="").split()
     for file in install_files:
         click.secho("Copying {0}".format(file), fg="magenta", nl=False)
         try:
@@ -235,19 +235,23 @@ def install_files(plugin_dir, cfg):
             errors.append("Error copying directory: {0}, {1}".format(xdir, str(oops)))
             click.echo(click.style(" ----> ERROR", fg="red"))
             fail = True
-    help_src = cfg.get("help", "dir")
-    if os.path.exists(help_src):
-        help_target = os.path.join(plugin_dir, cfg.get("help", "target"))
-        click.secho("Copying {0} to {1}".format(help_src, help_target), fg="magenta", nl=False)
-        try:
-            shutil.copytree(help_src, help_target, dirs_exist_ok=True)
-            print()
-        except Exception as oops:
-            errors.append("Error copying help files: {0}, {1}".format(help_src, str(oops)))
-            click.echo(click.style(" ----> ERROR", fg="red"))
-            fail = True
-    else:
-        click.secho("No help found at {0}, skipping".format(help_src), fg="yellow")
+    if copy_help:
+        help_src = cfg.get("help", "dir", fallback=None)
+        help_target_name = cfg.get("help", "target", fallback=None)
+        if not help_src or not help_target_name:
+            click.secho("No [help] section in config, skipping help files", fg="yellow")
+        elif os.path.exists(help_src):
+            help_target = os.path.join(plugin_dir, help_target_name)
+            click.secho("Copying {0} to {1}".format(help_src, help_target), fg="magenta", nl=False)
+            try:
+                shutil.copytree(help_src, help_target, dirs_exist_ok=True)
+                print()
+            except Exception as oops:
+                errors.append("Error copying help files: {0}, {1}".format(help_src, str(oops)))
+                click.echo(click.style(" ----> ERROR", fg="red"))
+                fail = True
+        else:
+            click.secho("No help found at {0}, skipping".format(help_src), fg="yellow")
     if fail:
         print("\nERRORS:")
         for error in errors:

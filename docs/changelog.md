@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.5.1] - 2026-07-18
+
+### Added
+- fallback to fix when deploy crashing with NoSectionError when pb_tool.cfg had no [help] section. Read help dir/target with fallbacks and skip the copy step when they are absent
+- pass --no-docs through to install_files so it also skips copying help (including in --quick mode), and tolerate a missing extra_dirs option with a fallback.
+- Added tests using a legacy-style config without a [help] section.
+
+
 ## [3.5.0] - 2026-07-17
 
 ### Added
