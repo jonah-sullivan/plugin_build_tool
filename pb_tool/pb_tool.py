@@ -933,6 +933,9 @@ def compile_files(cfg):
     # TODO add changed detection
     # cfg = get_config(config)
 
+    ui_files = cfg.get("files", "compiled_ui_files").split()
+    res_files = cfg.get("files", "resource_files").split()
+
     # determine Qt version and select appropriate uic tool
     if check_path("pyuic6"):
         pyuic = check_path("pyuic6")
@@ -944,13 +947,14 @@ def compile_files(cfg):
         pyuic = None
         qt_version = None
 
-    if not pyuic:
+    if not ui_files:
+        print("Compiled 0 UI files")
+    elif not pyuic:
         print("pyuic5/pyuic6 is not in your path---unable to compile your ui files")
         if sys.platform == "win32":
             print("On Windows, run pb_tool from the OSGeo4W shell, or add the OSGeo4W bin directory to your PATH.")
     else:
         print("Using Qt{0} ({1})".format(qt_version, pyuic))
-        ui_files = cfg.get("files", "compiled_ui_files").split()
         ui_count = 0
         for ui in ui_files:
             if os.path.exists(ui):
@@ -966,50 +970,59 @@ def compile_files(cfg):
                 print("{0} does not exist---skipped".format(ui))
         print("Compiled {0} UI files".format(ui_count))
 
-    # check to see if we have rcc
-    rcc = check_path("rcc")
+    if not res_files:
+        print("Compiled 0 resource files")
+        return
 
-    if not rcc:
-        click.secho(
-            "rcc is not in your path---unable to compile your resource file(s)",
-            fg="red",
-        )
-        if sys.platform == "win32":
+    # rcc is only needed for the Qt6 pipeline; Qt5 uses pyrcc5 (or the
+    # PyQt5.pyrcc_main fallback) instead.
+    rcc = None
+    if qt_version == 6:
+        rcc = check_path("rcc")
+        if not rcc:
             click.secho(
-                "On Windows, run pb_tool from the OSGeo4W shell, or add the OSGeo4W bin directory to your PATH.",
+                "rcc is not in your path---unable to compile your resource file(s)",
                 fg="red",
             )
-    else:
-        res_files = cfg.get("files", "resource_files").split()
-        res_count = 0
-        for res in res_files:
-            if os.path.exists(res):
-                base, ext = os.path.splitext(res)
-                output = "{0}.py".format(base)
-                if file_changed(res, output):
-                    print("Compiling {0} to {1}".format(res, output))
-                    cmd = []
-                    if qt_version == 6:
-                        cmd += [rcc, "-g", "python"]
-                    if qt_version == 5:
-                        pyrcc5 = check_path("pyrcc5")
-                        if pyrcc5:
-                            cmd += [pyrcc5]
-                        else:
-                            cmd += [sys.executable, "-m", "PyQt5.pyrcc_main"]
-                    cmd += ["-o", output, res]
-                    subprocess.check_call(cmd)
-                    with open(output, "r") as f:
-                        content = f.read()
-                    content = content.replace("from PySide6 import QtCore", "from qgis.PyQt import QtCore")
-                    with open(output, "w") as f:
-                        f.write(content)
-                    res_count += 1
-                else:
-                    print("Skipping {0} (unchanged)".format(res))
+            if sys.platform == "win32":
+                click.secho(
+                    "On Windows, run pb_tool from the OSGeo4W shell, or add the OSGeo4W bin directory to your PATH.",
+                    fg="red",
+                )
+            return
+    elif qt_version is None:
+        print("Unable to determine Qt version---skipping resource compilation")
+        return
+
+    res_count = 0
+    for res in res_files:
+        if os.path.exists(res):
+            base, ext = os.path.splitext(res)
+            output = "{0}.py".format(base)
+            if file_changed(res, output):
+                print("Compiling {0} to {1}".format(res, output))
+                cmd = []
+                if qt_version == 6:
+                    cmd += [rcc, "-g", "python"]
+                if qt_version == 5:
+                    pyrcc5 = check_path("pyrcc5")
+                    if pyrcc5:
+                        cmd += [pyrcc5]
+                    else:
+                        cmd += [sys.executable, "-m", "PyQt5.pyrcc_main"]
+                cmd += ["-o", output, res]
+                subprocess.check_call(cmd)
+                with open(output, "r") as f:
+                    content = f.read()
+                content = content.replace("from PySide6 import QtCore", "from qgis.PyQt import QtCore")
+                with open(output, "w") as f:
+                    f.write(content)
+                res_count += 1
             else:
-                print("{0} does not exist---skipped".format(res))
-        print("Compiled {0} resource files".format(res_count))
+                print("Skipping {0} (unchanged)".format(res))
+        else:
+            print("{0} does not exist---skipped".format(res))
+    print("Compiled {0} resource files".format(res_count))
 
 
 def copy(source, destination):

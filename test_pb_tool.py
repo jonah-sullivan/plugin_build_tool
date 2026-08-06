@@ -497,3 +497,45 @@ def test_compile():
             f.write(MINIMAL_CFG)
         result = runner.invoke(pb_tool.cli, ["compile"])
         assert result.exit_code == 0
+
+
+def test_compile_no_files_no_tool_warnings(monkeypatch):
+    # See issue #44: an empty compiled_ui_files/resource_files config should
+    # never trigger "not in your path" warnings, even if no Qt tools exist.
+    monkeypatch.setattr(pb_tool, "check_path", lambda app: None)
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(MINIMAL_CFG)
+        result = runner.invoke(pb_tool.cli, ["compile"])
+        assert result.exit_code == 0
+        assert "pyuic5/pyuic6 is not in your path" not in result.output
+        assert "rcc is not in your path" not in result.output
+        assert "Compiled 0 UI files" in result.output
+        assert "Compiled 0 resource files" in result.output
+
+
+def test_compile_qt5_resources_without_rcc(monkeypatch):
+    # Qt5 resource compilation uses pyrcc5, not rcc, so a missing rcc binary
+    # should not block it.
+    cfg = MINIMAL_CFG.replace("resource_files:", "resource_files: resources.qrc")
+
+    def fake_check_path(app):
+        return {"pyuic5": "/fake/pyuic5", "pyrcc5": "/fake/pyrcc5"}.get(app)
+
+    def fake_check_call(cmd):
+        output = cmd[cmd.index("-o") + 1]
+        with open(output, "w") as f:
+            f.write("# compiled\n")
+
+    monkeypatch.setattr(pb_tool, "check_path", fake_check_path)
+    monkeypatch.setattr(pb_tool.subprocess, "check_call", fake_check_call)
+
+    with runner.isolated_filesystem():
+        with open("pb_tool.cfg", "w") as f:
+            f.write(cfg)
+        with open("resources.qrc", "w") as f:
+            f.write("<RCC></RCC>\n")
+        result = runner.invoke(pb_tool.cli, ["compile"])
+        assert result.exit_code == 0
+        assert "rcc is not in your path" not in result.output
+        assert "Compiled 1 resource files" in result.output

@@ -1,5 +1,8 @@
 # Changelog
 
+## [3.5.2] - 2026-08-07
+- Only warn about missing pyuic/rcc when there are files to compile
+
 ## [3.5.1] - 2026-07-18
 
 ### Added
