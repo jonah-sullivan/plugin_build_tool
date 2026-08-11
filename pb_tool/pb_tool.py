@@ -1214,7 +1214,7 @@ def patch_metadata(metadata_path, release_version=None):
         content = f.read()
 
     def replace_or_append(text, key, value):
-        pattern = rf"^{re.escape(key)}=.*$"
+        pattern = rf"^\s*{re.escape(key)}\s*=.*$"
         new_line = f"{key}={value}"
         if re.search(pattern, text, flags=re.M):
             return re.sub(pattern, new_line, text, flags=re.M)
