@@ -268,6 +268,18 @@ def test_deploy_full_without_help_section():
         assert os.path.exists(os.path.join("deploy_build", "TestPlugin", "__init__.py"))
 
 
+def test_zip_full_without_help_section():
+    with runner.isolated_filesystem():
+        _write_legacy_plugin_files()
+        with (
+            patch.object(pb_tool, "check_path", return_value="zip"),
+            patch.object(pb_tool.subprocess, "check_call"),
+        ):
+            result = runner.invoke(pb_tool.cli, ["zip", "--no-docs"], input="y\n")
+        assert result.exit_code == 0
+        assert os.path.exists(os.path.join("deploy_build", "TestPlugin", "__init__.py"))
+
+
 def test_zip():
     with runner.isolated_filesystem():
         with open("pb_tool.cfg", "w") as f:
