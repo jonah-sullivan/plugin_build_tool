@@ -436,11 +436,17 @@ def translate(config):
     help="Specify the directory where your plugin is deployed if not using the standard location",
 )
 @click.option(
+    "--no-docs",
+    "-n",
+    is_flag=True,
+    help="Skip building the Sphinx help documentation",
+)
+@click.option(
     "--release-version",
     default=None,
     help="Stamp this version string into metadata.txt before packaging (e.g. 1.2.0)",
 )
-def zip(config_file, quick, plugin_path, release_version):
+def zip(config_file, quick, plugin_path, no_docs, release_version):
     """Package the plugin into a zip file
     suitable for uploading to the QGIS
     plugin repository"""
@@ -475,7 +481,7 @@ def zip(config_file, quick, plugin_path, release_version):
         proceed = click.confirm("This requires a dclean and deploy first. Proceed?")
         if proceed:
             # clean_deployment(False, config)
-            deploy_files(config_file, plugin_path=plugin_path, confirm=False)
+            deploy_files(config_file, plugin_path=plugin_path, build_help=not no_docs, confirm=False)
     else:
         # Check to see if the plugin directory exists, otherwise we can't
         # do a quick zip
@@ -486,7 +492,7 @@ def zip(config_file, quick, plugin_path, release_version):
             # proceed = click.confirm(
             #     'Do you want to deploy and proceed with packaging?')
             # if proceed:
-            deploy_files(config_file, plugin_path=plugin_path, confirm=False)
+            deploy_files(config_file, plugin_path=plugin_path, build_help=not no_docs, confirm=False)
         proceed = True
 
     # confirm = click.confirm(
