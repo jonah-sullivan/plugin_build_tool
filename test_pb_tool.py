@@ -336,9 +336,9 @@ def test_patch_metadata_version_injection():
             pb_tool.patch_metadata("metadata.txt", release_version="1.2.3")
         with open("metadata.txt") as f:
             result = f.read()
-    assert "version=1.2.3" in result
+    assert "version = 1.2.3" in result
     assert "version=0.1" not in result
-    assert "dateTime=" in result
+    assert "dateTime = " in result
 
 
 def test_patch_metadata_prerelease_sets_experimental():
@@ -350,8 +350,8 @@ def test_patch_metadata_prerelease_sets_experimental():
             pb_tool.patch_metadata("metadata.txt", release_version="1.2.0-rc1")
         with open("metadata.txt") as f:
             result = f.read()
-    assert "version=1.2.0-rc1" in result
-    assert "experimental=True" in result
+    assert "version = 1.2.0-rc1" in result
+    assert "experimental = True" in result
     assert "experimental=False" not in result
 
 
@@ -364,9 +364,9 @@ def test_patch_metadata_git_info():
             pb_tool.patch_metadata("metadata.txt")
         with open("metadata.txt") as f:
             result = f.read()
-    assert "commitSha1=abc123def456" in result
-    assert "commitNumber=42" in result
-    assert "dateTime=" in result
+    assert "commitSha1 = abc123def456" in result
+    assert "commitNumber = 42" in result
+    assert "dateTime = " in result
 
 
 def test_patch_metadata_appends_missing_fields():
@@ -378,24 +378,24 @@ def test_patch_metadata_appends_missing_fields():
             pb_tool.patch_metadata("metadata.txt", release_version="2.0.0")
         with open("metadata.txt") as f:
             result = f.read()
-    assert "version=2.0.0" in result
-    assert "commitSha1=deadbeef" in result
-    assert "commitNumber=99" in result
-    assert "dateTime=" in result
+    assert "version = 2.0.0" in result
+    assert "commitSha1 = deadbeef" in result
+    assert "commitNumber = 99" in result
+    assert "dateTime = " in result
 
 
 def test_patch_metadata_with_whitespace():
     """patch_metadata sets experimental=True when the version is a pre-release."""
     with runner.isolated_filesystem():
         with open("metadata.txt", "w") as f:
-            f.write("[general]\nname=TestPlugin\n version=0.1\nexperimental =False\n")
+            f.write("[general]\nname=TestPlugin\nversion: 0.1\nexperimental =False\n")
         with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
             pb_tool.patch_metadata("metadata.txt", release_version="1.2.0-rc1")
         with open("metadata.txt") as f:
             result = f.read()
-    assert "version=1.2.0-rc1" in result
-    assert "version=0.1" not in result
-    assert "experimental=True" in result
+    assert "version = 1.2.0-rc1" in result
+    assert "version: 0.1" not in result
+    assert "experimental = True" in result
     assert "experimental =False" not in result
 
 
