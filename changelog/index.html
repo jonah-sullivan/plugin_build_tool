@@ -1,0 +1,1081 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A command-line tool for building and deploying QGIS Python plugins">
+      
+      
+      
+        <link rel="canonical" href="https://jonah-sullivan.github.io/plugin_build_tool/changelog/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.50">
+    
+    
+      
+        <title>Changelog - pb_tool</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.a40c8224.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#changelog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pb_tool" class="md-header__button md-logo" aria-label="pb_tool" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pb_tool
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jonah-sullivan/plugin_build_tool" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jonah-sullivan/plugin_build_tool
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pb_tool" class="md-nav__button md-logo" aria-label="pb_tool" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pb_tool
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jonah-sullivan/plugin_build_tool" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jonah-sullivan/plugin_build_tool
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Changelog
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Changelog
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#353-2026-08-28" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.5.3] - 2026-08-28
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.5.3] - 2026-08-28">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#352-2026-08-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.5.2] - 2026-08-07
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#351-2026-07-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.5.1] - 2026-07-18
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.5.1] - 2026-07-18">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#350-2026-07-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.5.0] - 2026-07-17
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.5.0] - 2026-07-17">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#340-2026-05-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.4.0] - 2026-05-24
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.4.0] - 2026-05-24">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Removed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#331-2026-04-30" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.3.1] - 2026-04-30
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.3.1] - 2026-04-30">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#330-2026-04-29" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.3.0] - 2026-04-29
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.3.0] - 2026-04-29">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#320-2026-04-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.2.0] - 2026-04-25
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.2.0] - 2026-04-25">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#191-2015-10-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      [1.9.1] - 2015-10-13
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#353-2026-08-28" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.5.3] - 2026-08-28
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.5.3] - 2026-08-28">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#352-2026-08-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.5.2] - 2026-08-07
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#351-2026-07-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.5.1] - 2026-07-18
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.5.1] - 2026-07-18">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#350-2026-07-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.5.0] - 2026-07-17
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.5.0] - 2026-07-17">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#340-2026-05-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.4.0] - 2026-05-24
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.4.0] - 2026-05-24">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Removed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#331-2026-04-30" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.3.1] - 2026-04-30
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.3.1] - 2026-04-30">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#330-2026-04-29" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.3.0] - 2026-04-29
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.3.0] - 2026-04-29">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#320-2026-04-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      [3.2.0] - 2026-04-25
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.2.0] - 2026-04-25">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#191-2015-10-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      [1.9.1] - 2015-10-13
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="changelog">Changelog</h1>
+<h2 id="353-2026-08-28">[3.5.3] - 2026-08-28</h2>
+<h3 id="added">Added</h3>
+<ul>
+<li><code>--no-docs</code> flag for <code>pb_tool zip</code> to skip building/copying the Sphinx help</li>
+</ul>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li>Ignore whitespace around keys when patching <code>metadata.txt</code></li>
+</ul>
+<h3 id="changed">Changed</h3>
+<ul>
+<li>Patch <code>metadata.txt</code> with configparser (<code>=</code>/<code>:</code> separators) and
+  edit it in place via ConfigUpdater, so comments, blank lines, and key order
+  in the packaged file are preserved and adds the <code>configupdater</code> dependency</li>
+</ul>
+<h2 id="352-2026-08-07">[3.5.2] - 2026-08-07</h2>
+<ul>
+<li>Only warn about missing pyuic/rcc when there are files to compile</li>
+</ul>
+<h2 id="351-2026-07-18">[3.5.1] - 2026-07-18</h2>
+<h3 id="added_1">Added</h3>
+<ul>
+<li>fallback to fix when deploy crashing with NoSectionError when pb_tool.cfg had no [help] section. Read help dir/target with fallbacks and skip the copy step when they are absent</li>
+<li>pass --no-docs through to install_files so it also skips copying help (including in --quick mode), and tolerate a missing extra_dirs option with a fallback.</li>
+<li>Added tests using a legacy-style config without a [help] section.</li>
+</ul>
+<h2 id="350-2026-07-17">[3.5.0] - 2026-07-17</h2>
+<h3 id="added_2">Added</h3>
+<ul>
+<li><code>--release-version</code> option for <code>pb_tool zip</code>: stamps <code>version</code>, <code>commitSha1</code>, <code>commitNumber</code>, and <code>dateTime</code> into the deployed <code>metadata.txt</code> before creating the archive. Pre-release version strings (containing <code>rc</code>, <code>alpha</code>, <code>beta</code>, or <code>dev</code>) also set <code>experimental=True</code>. Fields that don't already exist in <code>metadata.txt</code> are appended automatically. The source <code>metadata.txt</code> is never modified.</li>
+<li><code>-p/--plugin_path</code> option for <code>pb_tool zip</code> and <code>pb_tool dclean</code>. All deploy-related commands now resolve the plugin directory the same way: <code>-p</code> option &gt; <code>plugin_path</code> in <code>pb_tool.cfg</code> &gt; default QGIS profile directory (#41)</li>
+</ul>
+<h3 id="fixed_1">Fixed</h3>
+<ul>
+<li>Fatal errors now exit with a non-zero code so scripts and CI can detect failures (#42): missing config file (<code>deploy</code>, <code>zip</code>, <code>list</code>), no zip/7z utility found (<code>zip</code>), missing plugin <code>name</code> in the config (<code>zip</code>), invalid config (<code>validate</code>), and missing templates (<code>create</code>)</li>
+<li><code>zip</code> and <code>dclean</code> no longer ignore a custom plugin path and zip the wrong (often empty) directory (#41)</li>
+<li><code>zip</code> restores the original working directory after packaging</li>
+<li><code>update</code> no longer crashes when the installed version cannot be determined</li>
+</ul>
+<hr />
+<h2 id="340-2026-05-24">[3.4.0] - 2026-05-24</h2>
+<h3 id="added_3">Added</h3>
+<ul>
+<li>New <code>dockwidget</code> plugin type: <code>pb_tool create --type dockwidget</code> generates a toolbar button plugin with a dock widget panel</li>
+<li><code>--title</code> option to <code>pb_tool create</code> for the human-readable plugin name shown in QGIS menus (distinct from the Python class name)</li>
+<li><code>icon.png</code> is now copied into the generated plugin directory automatically</li>
+</ul>
+<h3 id="changed_1">Changed</h3>
+<ul>
+<li>Generated plugin templates updated to match <a href="https://github.com/jonah-sullivan/Qgis-Plugin-Builder">QGIS Plugin Builder</a>:<ul>
+<li><strong>Dialog plugins:</strong> replaced <code>QSettings</code>/<code>qVersion</code>/own toolbar with <code>QgsSettings</code>/<code>QLocale</code>/<code>iface.addToolBarIcon</code>; icon loaded from the filesystem instead of a Qt resource alias; dialog creation deferred to first <code>run()</code> call (<code>first_start</code> pattern)</li>
+<li><strong>Processing plugins:</strong> main class renamed to <code>*Plugin</code> and no longer takes <code>iface</code>; added <code>__author__</code>/<code>__date__</code>/<code>__copyright__</code>/<code>__revision__</code> module attributes; algorithm uses <code>self.tr()</code>, <code>QgsFeatureSink.FastInsert</code>, and correct <code>100.0 / featureCount</code> progress tracking; provider gains <code>__init__</code>, <code>unload</code>, <code>icon()</code>, and <code>longName()</code></li>
+<li><strong><code>pb_tool.cfg</code>:</strong> updated with <code>plugin_path:</code> field, <code>LICENSE</code> in extras, and correct <code>python_files</code>/<code>main_dialog</code> values populated per plugin type</li>
+</ul>
+</li>
+<li><code>resources.qrc</code> is no longer generated (Qt resource system not needed now that the icon uses a filesystem path)</li>
+<li><code>sphinx</code> moved to optional <code>docs</code> dependency group</li>
+</ul>
+<h3 id="fixed_2">Fixed</h3>
+<ul>
+<li>Dialog template uses <code>exec()</code> instead of deprecated <code>exec_()</code> for Qt6/QGIS 4 compatibility</li>
+</ul>
+<h3 id="removed">Removed</h3>
+<ul>
+<li><code>test_plugin</code> directory removed from the repository; tests now generate a temporary plugin in an isolated filesystem</li>
+</ul>
+<hr />
+<h2 id="331-2026-04-30">[3.3.1] - 2026-04-30</h2>
+<h3 id="fixed_3">Fixed</h3>
+<ul>
+<li>Windows compatibility issues in path handling</li>
+<li><code>get_plugin_directory()</code> now used consistently in the <code>validate</code> command</li>
+<li><code>urlopen</code> replaced with <code>http.client</code> to fix Bandit B310 security warning</li>
+<li><code>xmlrpc.client</code> replaced with <code>urllib</code> and <code>defusedxml</code> in <code>plugin_upload.py</code></li>
+<li><code>__pycache__</code> directories and cache files excluded from <code>zip</code> output</li>
+</ul>
+<hr />
+<h2 id="330-2026-04-29">[3.3.0] - 2026-04-29</h2>
+<h3 id="added_4">Added</h3>
+<ul>
+<li>MkDocs documentation site</li>
+<li>GitHub Actions publishing workflow</li>
+<li>Badges in README</li>
+</ul>
+<h3 id="changed_2">Changed</h3>
+<ul>
+<li>Version now read from package metadata via <code>importlib.metadata</code> instead of being hardcoded</li>
+<li><code>translate</code> command updated for Qt6</li>
+</ul>
+<h3 id="fixed_4">Fixed</h3>
+<ul>
+<li>Windows compatibility and failing tests</li>
+<li>Debug print statements removed from <code>translate</code> command</li>
+<li>PyQt5 import paths updated</li>
+</ul>
+<hr />
+<h2 id="320-2026-04-25">[3.2.0] - 2026-04-25</h2>
+<h3 id="added_5">Added</h3>
+<ul>
+<li>Processing plugin skeleton template and <code>pb_tool create</code> command</li>
+<li><code>--no-docs</code> flag to skip Sphinx build during deploy</li>
+<li><code>excluded_files</code> option to filter files from deployment</li>
+<li>Plugin directory detection for QGIS 3 and 4 profiles</li>
+<li>Qt5/Qt6 fallback for resource compilation</li>
+</ul>
+<h3 id="fixed_5">Fixed</h3>
+<ul>
+<li><code>TemplatePyFiles</code> not substituted in generated <code>pb_tool.cfg</code></li>
+<li>Sphinx build failure on OSGeo4W</li>
+<li><code>pyrcc5</code> compile failure on Windows/OSGeo4W</li>
+<li>Deploy failure for UI files in subdirectories</li>
+<li>Create full plugin directory path on fresh profiles (<code>os.makedirs</code> with <code>exist_ok=True</code>)</li>
+<li>Exit with non-zero error code when deployment fails</li>
+</ul>
+<h3 id="changed_3">Changed</h3>
+<ul>
+<li>Ported from Python 2 to Python 3</li>
+<li>Updated for QGIS 4 and Qt6</li>
+<li>Modernised packaging (<code>pyproject.toml</code>)</li>
+<li>QGIS 3/4 plugin directory paths updated</li>
+</ul>
+<hr />
+<h2 id="191-2015-10-13">[1.9.1] - 2015-10-13</h2>
+<p>Last release of the original Gary Sherman version.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.60a45f97.min.js"></script>
+      
+    
+  </body>
+</html>
