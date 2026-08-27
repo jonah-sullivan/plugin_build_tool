@@ -24,7 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
 ]
 requires-python = ">=3.9"
-dependencies = ["click", "colorama", "defusedxml"]
+dependencies = ["click", "colorama", "configupdater", "defusedxml"]
 
 [project.optional-dependencies]
 docs = ["sphinx"]

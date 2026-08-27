@@ -1212,27 +1212,48 @@ def get_git_info():
 
 
 def patch_metadata(metadata_path, release_version=None):
-    """Inject version, git SHA, commit count, and datetime into a deployed metadata.txt."""
+    """Inject version, git SHA, commit count, and datetime into a deployed metadata.txt.
+
+    Edits are surgical: only the touched keys change. Comments, blank lines and
+    key order in the rest of the file are left untouched. Parsing follows the
+    same rules QGIS and the plugin repository use (configparser semantics via
+    ConfigUpdater), so ``=`` and ``:`` separators and leading whitespace around
+    them are all handled consistently.
+    """
     import re
     from datetime import datetime, timezone
 
-    cfg = configparser.ConfigParser()
-    cfg.optionxform = str
-    cfg.read(metadata_path)
+    from configupdater import ConfigUpdater
+
+    updater = ConfigUpdater()
+    updater.optionxform = str  # preserve camelCase keys (commitSha1, dateTime)
+    with open(metadata_path, encoding="utf-8") as f:
+        updater.read_string(f.read())
+
+    if not updater.has_section("general"):
+        updater.add_section("general")
+    general = updater["general"]
+
+    def set_key(key, value):
+        value = str(value)
+        if key in general:
+            general[key].value = value
+        else:
+            general[key] = value
 
     if release_version:
-        cfg["general"]["version"] = release_version
+        set_key("version", release_version)
         is_prerelease = bool(re.search(r"[-.](?:rc|alpha|beta|dev)\d*", release_version, re.I))
         if is_prerelease:
-            cfg["general"]["experimental"] = str(is_prerelease)
+            set_key("experimental", "True")
 
     sha, count = get_git_info()
     if sha:
-        cfg["general"]["commitSha1"] = sha
+        set_key("commitSha1", sha)
     if count is not None:
-        cfg["general"]["commitNumber"] = str(count)
+        set_key("commitNumber", count)
 
-    cfg["general"]["dateTime"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    set_key("dateTime", datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 
     with open(metadata_path, "w", encoding="utf-8") as f:
-        cfg.write(f)
+        f.write(str(updater))

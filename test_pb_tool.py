@@ -1,5 +1,6 @@
 import configparser
 import os
+import re
 import shutil
 from unittest.mock import patch
 
@@ -327,8 +328,18 @@ def test_validate_invalid_config():
         assert "invalid" in result.output
 
 
+def _meta_value(text, key):
+    """Return the value of ``key`` in a metadata.txt string, or None.
+
+    Accepts either ``=`` or ``:`` as the separator and any whitespace around it,
+    so tests don't have to care how patch_metadata formats the line.
+    """
+    m = re.search(rf"^\s*{re.escape(key)}\s*[:=]\s*(.*?)\s*$", text, re.M)
+    return m.group(1) if m else None
+
+
 def test_patch_metadata_version_injection():
-    """patch_metadata stamps the release version into an existing version= field."""
+    """patch_metadata stamps the release version into an existing version field."""
     with runner.isolated_filesystem():
         with open("metadata.txt", "w") as f:
             f.write("[general]\nname=TestPlugin\nversion=0.1\nauthor=Test\n")
@@ -336,9 +347,11 @@ def test_patch_metadata_version_injection():
             pb_tool.patch_metadata("metadata.txt", release_version="1.2.3")
         with open("metadata.txt") as f:
             result = f.read()
-    assert "version = 1.2.3" in result
-    assert "version=0.1" not in result
-    assert "dateTime = " in result
+    assert _meta_value(result, "version") == "1.2.3"
+    assert _meta_value(result, "dateTime")
+    # untouched keys are left exactly as they were
+    assert "name=TestPlugin" in result
+    assert "author=Test" in result
 
 
 def test_patch_metadata_prerelease_sets_experimental():
@@ -350,9 +363,8 @@ def test_patch_metadata_prerelease_sets_experimental():
             pb_tool.patch_metadata("metadata.txt", release_version="1.2.0-rc1")
         with open("metadata.txt") as f:
             result = f.read()
-    assert "version = 1.2.0-rc1" in result
-    assert "experimental = True" in result
-    assert "experimental=False" not in result
+    assert _meta_value(result, "version") == "1.2.0-rc1"
+    assert _meta_value(result, "experimental") == "True"
 
 
 def test_patch_metadata_git_info():
@@ -364,9 +376,9 @@ def test_patch_metadata_git_info():
             pb_tool.patch_metadata("metadata.txt")
         with open("metadata.txt") as f:
             result = f.read()
-    assert "commitSha1 = abc123def456" in result
-    assert "commitNumber = 42" in result
-    assert "dateTime = " in result
+    assert _meta_value(result, "commitSha1") == "abc123def456"
+    assert _meta_value(result, "commitNumber") == "42"
+    assert _meta_value(result, "dateTime")
 
 
 def test_patch_metadata_appends_missing_fields():
@@ -378,25 +390,80 @@ def test_patch_metadata_appends_missing_fields():
             pb_tool.patch_metadata("metadata.txt", release_version="2.0.0")
         with open("metadata.txt") as f:
             result = f.read()
-    assert "version = 2.0.0" in result
-    assert "commitSha1 = deadbeef" in result
-    assert "commitNumber = 99" in result
-    assert "dateTime = " in result
+    assert _meta_value(result, "version") == "2.0.0"
+    assert _meta_value(result, "commitSha1") == "deadbeef"
+    assert _meta_value(result, "commitNumber") == "99"
+    assert _meta_value(result, "dateTime")
 
 
 def test_patch_metadata_with_whitespace():
-    """patch_metadata sets experimental=True when the version is a pre-release."""
+    """patch_metadata tolerates whitespace around the key/value separator."""
     with runner.isolated_filesystem():
         with open("metadata.txt", "w") as f:
-            f.write("[general]\nname=TestPlugin\nversion: 0.1\nexperimental =False\n")
+            f.write("[general]\nname=TestPlugin\nversion = 0.1\nexperimental =False\n")
         with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
             pb_tool.patch_metadata("metadata.txt", release_version="1.2.0-rc1")
         with open("metadata.txt") as f:
             result = f.read()
-    assert "version = 1.2.0-rc1" in result
-    assert "version: 0.1" not in result
-    assert "experimental = True" in result
-    assert "experimental =False" not in result
+    assert _meta_value(result, "version") == "1.2.0-rc1"
+    assert _meta_value(result, "experimental") == "True"
+
+
+def test_patch_metadata_colon_separator():
+    """patch_metadata patches keys that use a colon separator (QGIS accepts both)."""
+    with runner.isolated_filesystem():
+        with open("metadata.txt", "w") as f:
+            f.write("[general]\nname=TestPlugin\nversion: 0.1\n")
+        with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
+            pb_tool.patch_metadata("metadata.txt", release_version="1.2.3")
+        with open("metadata.txt") as f:
+            result = f.read()
+    assert _meta_value(result, "version") == "1.2.3"
+    assert "0.1" not in result
+
+
+def test_patch_metadata_preserves_comments_and_order():
+    """patch_metadata only rewrites the keys it touches, leaving the rest intact."""
+    original = (
+        "[general]\n"
+        "name=TestPlugin\n"
+        "# release notes below - keep this comment\n"
+        "changelog=\n"
+        "    1.0 first release\n"
+        "\n"
+        "version=0.1\n"
+        "about=Handles 50% of the cases\n"
+        "\n"
+        "[extra]\n"
+        "foo=bar\n"
+    )
+    with runner.isolated_filesystem():
+        with open("metadata.txt", "w") as f:
+            f.write(original)
+        with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
+            pb_tool.patch_metadata("metadata.txt", release_version="1.2.3")
+        with open("metadata.txt") as f:
+            result = f.read()
+    assert "# release notes below - keep this comment" in result
+    assert "    1.0 first release" in result
+    assert "about=Handles 50% of the cases" in result  # '%' left untouched
+    assert "[extra]\nfoo=bar" in result
+    assert result.index("name=TestPlugin") < result.index("changelog=") < result.index("about=")
+    assert _meta_value(result, "version") == "1.2.3"
+
+
+def test_patch_metadata_creates_general_section_if_missing():
+    """patch_metadata adds a [general] section instead of crashing when absent."""
+    with runner.isolated_filesystem():
+        with open("metadata.txt", "w") as f:
+            f.write("[help]\nfoo=bar\n")
+        with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
+            pb_tool.patch_metadata("metadata.txt", release_version="1.0.0")
+        with open("metadata.txt") as f:
+            result = f.read()
+    assert "[general]" in result
+    assert _meta_value(result, "version") == "1.0.0"
+    assert "[help]\nfoo=bar" in result
 
 
 def test_dclean():
