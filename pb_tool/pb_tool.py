@@ -1216,31 +1216,23 @@ def patch_metadata(metadata_path, release_version=None):
     import re
     from datetime import datetime, timezone
 
-    with open(metadata_path, encoding="utf-8") as f:
-        content = f.read()
-
-    def replace_or_append(text, key, value):
-        pattern = rf"^\s*{re.escape(key)}\s*=.*$"
-        new_line = f"{key}={value}"
-        if re.search(pattern, text, flags=re.M):
-            return re.sub(pattern, new_line, text, flags=re.M)
-        # append after [general] block if key not present
-        return re.sub(r"(\[general\][^\[]*)", rf"\1{new_line}\n", text, count=1, flags=re.S)
+    cfg = configparser.ConfigParser()
+    cfg.optionxform = str
+    cfg.read(metadata_path)
 
     if release_version:
-        content = replace_or_append(content, "version", release_version)
+        cfg["general"]["version"] = release_version
         is_prerelease = bool(re.search(r"[-.](?:rc|alpha|beta|dev)\d*", release_version, re.I))
         if is_prerelease:
-            content = replace_or_append(content, "experimental", "True")
+            cfg["general"]["experimental"] = str(is_prerelease)
 
     sha, count = get_git_info()
     if sha:
-        content = replace_or_append(content, "commitSha1", sha)
+        cfg["general"]["commitSha1"] = sha
     if count is not None:
-        content = replace_or_append(content, "commitNumber", count)
+        cfg["general"]["commitNumber"] = str(count)
 
-    date_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    content = replace_or_append(content, "dateTime", date_time)
+    cfg["general"]["dateTime"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     with open(metadata_path, "w", encoding="utf-8") as f:
-        f.write(content)
+        cfg.write(f)
