@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pb_tool"
-version = "3.5.2"
+version = "3.5.3"
 description = "A tool to aid in QGIS Python plugin development"
 readme = "README.md"
 license = { text = "GPL-2.0-or-later" }

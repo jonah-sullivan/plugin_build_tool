@@ -1,4 +1,16 @@
 # Changelog
+## [3.5.3] - 2026-08-28
+
+### Added
+- `--no-docs` flag for `pb_tool zip` to skip building/copying the Sphinx help
+
+### Fixed
+- Ignore whitespace around keys when patching `metadata.txt`
+
+### Changed
+- Patch `metadata.txt` with configparser (`=`/`:` separators) and
+  edit it in place via ConfigUpdater, so comments, blank lines, and key order
+  in the packaged file are preserved and adds the `configupdater` dependency
 
 ## [3.5.2] - 2026-08-07
 - Only warn about missing pyuic/rcc when there are files to compile
