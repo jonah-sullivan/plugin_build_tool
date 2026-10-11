@@ -1,7 +1,7 @@
 import configparser
-import os
 import re
 import shutil
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -83,7 +83,7 @@ def test_config():
             input="y\n",
         )
         assert result.exit_code == 0
-        assert os.path.exists("test_from_pytest.cfg") == 1
+        assert Path("test_from_pytest.cfg").exists()
 
 
 def test_create():
@@ -134,15 +134,15 @@ def test_create_processing_files():
         )
         assert result.exit_code == 0
         for expected in [
-            os.path.join("my_plugin", "__init__.py"),
-            os.path.join("my_plugin", "my_plugin.py"),
-            os.path.join("my_plugin", "my_plugin_algorithm.py"),
-            os.path.join("my_plugin", "my_plugin_provider.py"),
-            os.path.join("my_plugin", "README.md"),
-            os.path.join("my_plugin", "pb_tool.cfg"),
+            Path("my_plugin") / "__init__.py",
+            Path("my_plugin") / "my_plugin.py",
+            Path("my_plugin") / "my_plugin_algorithm.py",
+            Path("my_plugin") / "my_plugin_provider.py",
+            Path("my_plugin") / "README.md",
+            Path("my_plugin") / "pb_tool.cfg",
         ]:
-            assert os.path.exists(expected), f"{expected} was not created"
-        with open(os.path.join("my_plugin", "my_plugin.py")) as f:
+            assert expected.exists(), f"{expected} was not created"
+        with open(Path("my_plugin") / "my_plugin.py") as f:
             content = f.read()
         assert "MyPlugin" in content
         assert "Test Author" in content
@@ -174,16 +174,16 @@ def test_create_dialog_files():
         )
         assert result.exit_code == 0
         for expected in [
-            os.path.join("my_plugin", "__init__.py"),
-            os.path.join("my_plugin", "my_plugin.py"),
-            os.path.join("my_plugin", "my_plugin_dialog.py"),
-            os.path.join("my_plugin", "my_plugin_dialog_base.ui"),
-            os.path.join("my_plugin", "icon.png"),
-            os.path.join("my_plugin", "README.md"),
-            os.path.join("my_plugin", "pb_tool.cfg"),
+            Path("my_plugin") / "__init__.py",
+            Path("my_plugin") / "my_plugin.py",
+            Path("my_plugin") / "my_plugin_dialog.py",
+            Path("my_plugin") / "my_plugin_dialog_base.ui",
+            Path("my_plugin") / "icon.png",
+            Path("my_plugin") / "README.md",
+            Path("my_plugin") / "pb_tool.cfg",
         ]:
-            assert os.path.exists(expected), f"{expected} was not created"
-        with open(os.path.join("my_plugin", "my_plugin_dialog.py")) as f:
+            assert expected.exists(), f"{expected} was not created"
+        with open(Path("my_plugin") / "my_plugin_dialog.py") as f:
             content = f.read()
         assert "MyPlugin" in content
         assert "$Template" not in content
@@ -214,16 +214,16 @@ def test_create_dockwidget_files():
         )
         assert result.exit_code == 0
         for expected in [
-            os.path.join("my_plugin", "__init__.py"),
-            os.path.join("my_plugin", "my_plugin.py"),
-            os.path.join("my_plugin", "my_plugin_dockwidget.py"),
-            os.path.join("my_plugin", "my_plugin_dockwidget_base.ui"),
-            os.path.join("my_plugin", "icon.png"),
-            os.path.join("my_plugin", "README.md"),
-            os.path.join("my_plugin", "pb_tool.cfg"),
+            Path("my_plugin") / "__init__.py",
+            Path("my_plugin") / "my_plugin.py",
+            Path("my_plugin") / "my_plugin_dockwidget.py",
+            Path("my_plugin") / "my_plugin_dockwidget_base.ui",
+            Path("my_plugin") / "icon.png",
+            Path("my_plugin") / "README.md",
+            Path("my_plugin") / "pb_tool.cfg",
         ]:
-            assert os.path.exists(expected), f"{expected} was not created"
-        with open(os.path.join("my_plugin", "my_plugin_dockwidget.py")) as f:
+            assert expected.exists(), f"{expected} was not created"
+        with open(Path("my_plugin") / "my_plugin_dockwidget.py") as f:
             content = f.read()
         assert "MyPlugin" in content
         assert "$Template" not in content
@@ -247,8 +247,8 @@ def _write_legacy_plugin_files():
         f.write(LEGACY_CFG_NO_HELP)
     with open("__init__.py", "w") as f:
         f.write("")
-    os.makedirs("bar")
-    with open(os.path.join("bar", "baz.txt"), "w") as f:
+    Path("bar").mkdir(parents=True, exist_ok=True)
+    with open(Path("bar") / "baz.txt", "w") as f:
         f.write("baz")
 
 
@@ -257,8 +257,8 @@ def test_deploy_quick_no_docs_without_help_section():
         _write_legacy_plugin_files()
         result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
         assert result.exit_code == 0
-        assert os.path.exists(os.path.join("deploy_build", "TestPlugin", "__init__.py"))
-        assert os.path.exists(os.path.join("deploy_build", "TestPlugin", "bar", "baz.txt"))
+        assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
+        assert (Path("deploy_build") / "TestPlugin" / "bar" / "baz.txt").exists()
 
 
 def test_deploy_full_without_help_section():
@@ -266,7 +266,7 @@ def test_deploy_full_without_help_section():
         _write_legacy_plugin_files()
         result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs"])
         assert result.exit_code == 0
-        assert os.path.exists(os.path.join("deploy_build", "TestPlugin", "__init__.py"))
+        assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
 
 
 def test_zip_full_without_help_section():
@@ -278,7 +278,7 @@ def test_zip_full_without_help_section():
         ):
             result = runner.invoke(pb_tool.cli, ["zip", "--no-docs"], input="y\n")
         assert result.exit_code == 0
-        assert os.path.exists(os.path.join("deploy_build", "TestPlugin", "__init__.py"))
+        assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
 
 
 def test_zip():
@@ -477,7 +477,7 @@ def test_dclean():
 def test_resolve_plugin_path_cli_wins_over_config():
     cfg = _read_cfg(CFG_WITH_PLUGIN_PATH)
     result = pb_tool.resolve_plugin_path(cfg, "cli_path")
-    assert result == os.path.abspath("cli_path")
+    assert result == Path("cli_path").absolute()
 
 
 def test_resolve_plugin_path_config_wins_over_default():
@@ -485,52 +485,50 @@ def test_resolve_plugin_path_config_wins_over_default():
     with patch.object(pb_tool, "get_plugin_directory") as mock_default:
         result = pb_tool.resolve_plugin_path(cfg)
     mock_default.assert_not_called()
-    assert result == os.path.abspath("./zip_build")
+    assert result == Path("./zip_build").absolute()
 
 
 def test_resolve_plugin_path_falls_back_to_default():
     cfg = _read_cfg(MINIMAL_CFG)
     with patch.object(pb_tool, "get_plugin_directory", return_value="qgis_default"):
         result = pb_tool.resolve_plugin_path(cfg)
-    assert result == os.path.abspath("qgis_default")
+    assert result == Path("qgis_default").absolute()
 
 
 def test_dclean_plugin_path_option():
     with runner.isolated_filesystem():
         with open("pb_tool.cfg", "w") as f:
             f.write(MINIMAL_CFG)
-        os.makedirs(os.path.join("zip_build", "TestPlugin"))
-        with open(os.path.join("zip_build", "TestPlugin", "x.txt"), "w") as f:
-            f.write("x")
-        sentinel = os.path.abspath("default_qgis")
+        (Path("zip_build") / "TestPlugin").mkdir(parents=True, exist_ok=True)
+        (Path("zip_build") / "TestPlugin" / "x.txt").write_text("x")
+        sentinel = Path("default_qgis").absolute()
         with patch.object(pb_tool, "get_plugin_directory", return_value=sentinel):
             result = runner.invoke(pb_tool.cli, ["dclean", "-p", "zip_build"], input="y\n")
         assert result.exit_code == 0
-        assert not os.path.exists(os.path.join("zip_build", "TestPlugin"))
-        assert not os.path.exists(sentinel)
+        assert not (Path("zip_build") / "TestPlugin").exists()
+        assert not sentinel.exists()
 
 
 def test_dclean_config_plugin_path():
     with runner.isolated_filesystem():
         with open("pb_tool.cfg", "w") as f:
             f.write(CFG_WITH_PLUGIN_PATH)
-        os.makedirs(os.path.join("zip_build", "TestPlugin"))
-        with open(os.path.join("zip_build", "TestPlugin", "x.txt"), "w") as f:
-            f.write("x")
-        sentinel = os.path.abspath("default_qgis")
+        (Path("zip_build") / "TestPlugin").mkdir(parents=True, exist_ok=True)
+        (Path("zip_build") / "TestPlugin" / "x.txt").write_text("x")
+        sentinel = Path("default_qgis").absolute()
         with patch.object(pb_tool, "get_plugin_directory", return_value=sentinel):
             result = runner.invoke(pb_tool.cli, ["dclean"], input="y\n")
         assert result.exit_code == 0
         assert "Using plugin directory from pb_tool.cfg" in result.output
-        assert not os.path.exists(os.path.join("zip_build", "TestPlugin"))
-        assert not os.path.exists(sentinel)
+        assert not (Path("zip_build") / "TestPlugin").exists()
+        assert not sentinel.exists()
 
 
 def test_zip_plugin_path_option():
     with runner.isolated_filesystem():
         with open("pb_tool.cfg", "w") as f:
             f.write(MINIMAL_CFG)
-        sentinel = os.path.abspath("default_qgis")
+        sentinel = Path("default_qgis").absolute()
         with (
             patch.object(pb_tool, "check_path", return_value="zip"),
             patch.object(pb_tool.subprocess, "check_call"),
@@ -538,8 +536,8 @@ def test_zip_plugin_path_option():
         ):
             result = runner.invoke(pb_tool.cli, ["zip", "-p", "zip_build"], input="y\n")
         assert result.exit_code == 0
-        assert os.path.isdir(os.path.join("zip_build", "TestPlugin"))
-        assert not os.path.exists(sentinel)
+        assert (Path("zip_build") / "TestPlugin").is_dir()
+        assert not sentinel.exists()
 
 
 @pytest.mark.skipif(
@@ -550,14 +548,14 @@ def test_zip_config_plugin_path_end_to_end():
     with runner.isolated_filesystem():
         with open("pb_tool.cfg", "w") as f:
             f.write(CFG_WITH_PLUGIN_PATH)
-        sentinel = os.path.abspath("default_qgis")
+        sentinel = Path("default_qgis").absolute()
         with patch.object(pb_tool, "get_plugin_directory", return_value=sentinel):
             result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
         assert result.exit_code == 0
         assert "Using plugin directory from pb_tool.cfg" in result.output
-        assert os.path.isdir(os.path.join("zip_build", "TestPlugin"))
-        assert os.path.exists("TestPlugin.zip")
-        assert not os.path.exists(sentinel)
+        assert (Path("zip_build") / "TestPlugin").is_dir()
+        assert (Path("TestPlugin.zip")).exists()
+        assert not sentinel.exists()
 
 
 def test_list():

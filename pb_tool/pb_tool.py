@@ -32,6 +32,7 @@ import subprocess
 import sys
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
+from pathlib import Path
 from string import Template
 
 import click
@@ -153,13 +154,13 @@ def resolve_plugin_path(cfg, plugin_path=None):
     if not plugin_path:
         plugin_path = get_plugin_directory()
 
-    return os.path.abspath(plugin_path)
+    return Path(plugin_path).absolute()
 
 
 def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help=True):
     """Deploy the plugin using parameters in pb_tool.cfg"""
     # check for the config file
-    if not os.path.exists(config_file):
+    if not Path(config_file).exists():
         click.secho("Configuration file {0} is missing.".format(config_file), fg="red")
         sys.exit(1)
     else:
@@ -167,7 +168,7 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help
 
         plugin_path = resolve_plugin_path(cfg, plugin_path)
 
-        plugin_dir = os.path.join(plugin_path, cfg.get("plugin", "name"))
+        plugin_dir = Path(plugin_path) / cfg.get("plugin", "name")
 
         if quick:
             click.secho("Doing quick deployment", fg="green")
@@ -207,15 +208,15 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help
 def install_files(plugin_dir, cfg, copy_help=True):
     errors = []
     install_files = get_install_files(cfg)
-    os.makedirs(plugin_dir, exist_ok=True)
+    Path(plugin_dir).mkdir(parents=True, exist_ok=True)
 
     fail = False
     extra_dirs = cfg.get("files", "extra_dirs", fallback="").split()
     for file in install_files:
         click.secho("Copying {0}".format(file), fg="magenta", nl=False)
         try:
-            dest = os.path.join(plugin_dir, file)
-            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            dest = Path(plugin_dir) / file
+            dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(file, dest)
             print()
         except Exception as oops:
@@ -229,7 +230,7 @@ def install_files(plugin_dir, cfg, copy_help=True):
             nl=False,
         )
         try:
-            shutil.copytree(xdir, os.path.join(plugin_dir, xdir), dirs_exist_ok=True)
+            shutil.copytree(xdir, Path(plugin_dir) / xdir, dirs_exist_ok=True)
             print()
         except Exception as oops:
             errors.append("Error copying directory: {0}, {1}".format(xdir, str(oops)))
@@ -240,8 +241,8 @@ def install_files(plugin_dir, cfg, copy_help=True):
         help_target_name = cfg.get("help", "target", fallback=None)
         if not help_src or not help_target_name:
             click.secho("No [help] section in config, skipping help files", fg="yellow")
-        elif os.path.exists(help_src):
-            help_target = os.path.join(plugin_dir, help_target_name)
+        elif Path(help_src).exists():
+            help_target = Path(plugin_dir) / help_target_name
             click.secho("Copying {0} to {1}".format(help_src, help_target), fg="magenta", nl=False)
             try:
                 shutil.copytree(help_src, help_target, dirs_exist_ok=True)
@@ -271,7 +272,7 @@ def clean_deployment(ask_first=True, config="pb_tool.cfg", plugin_dir=None):
     """Remove the deployed plugin from the .local/share/QGIS/QGIS4/profiles/default/python/plugins directory"""
     if not plugin_dir:
         cfg = get_config(config)
-        plugin_dir = os.path.join(resolve_plugin_path(cfg), cfg.get("plugin", "name"))
+        plugin_dir = Path(resolve_plugin_path(cfg)) / cfg.get("plugin", "name")
     if ask_first:
         proceed = click.confirm("Delete the deployed plugin from {0}?".format(plugin_dir))
     else:
@@ -294,16 +295,14 @@ def clean_docs():
     """
     Remove the built HTML help files from the build directory
     """
-    if os.path.exists("help"):
+    if Path("help").exists():
         click.echo("Removing built HTML from the help documentation")
         if sys.platform == "win32":
             makeprg = "make.bat"
         else:
             makeprg = "make"
-        cwd = os.getcwd()
-        os.chdir("help")
-        subprocess.check_call([makeprg, "clean"])
-        os.chdir(cwd)
+        subprocess.check_call([makeprg, "clean"], cwd=Path("help"))
+
     else:
         print("No help directory exists in the current directory")
 
@@ -324,7 +323,7 @@ def dclean(config, plugin_path):
     """Remove the deployed plugin from the QGIS plugin directory,
     --plugin_path, or plugin_path in the config file"""
     cfg = get_config(config)
-    plugin_dir = os.path.join(resolve_plugin_path(cfg, plugin_path), cfg.get("plugin", "name"))
+    plugin_dir = Path(resolve_plugin_path(cfg, plugin_path)) / cfg.get("plugin", "name")
     clean_deployment(True, config, plugin_dir)
 
 
@@ -341,10 +340,10 @@ def clean(config):
     click.echo("Cleaning resource and ui files")
     for file in files:
         try:
-            os.unlink(file)
-            print("Deleted: {0}".format(file))
+            Path(file).unlink()
+            print(f"Deleted: {file}")
         except OSError as oops:
-            print("Couldn't delete {0}: {1}".format(file, oops.strerror))
+            print(f"Couldn't delete {file}: {oops.strerror}")
 
 
 @cli.command()
@@ -368,7 +367,7 @@ def doc():
 
 def build_docs():
     """Build the docs using sphinx"""
-    if os.path.exists("help"):
+    if Path("help").exists():
         click.echo("Building the help documentation")
         if sys.platform == "win32":
             makeprg = "make.bat"
@@ -376,10 +375,7 @@ def build_docs():
             makeprg = "make"
         env = os.environ.copy()
         env["PYTHON"] = sys.executable
-        cwd = os.getcwd()
-        os.chdir("help")
-        subprocess.check_call([makeprg, "html"], env=env)
-        os.chdir(cwd)
+        subprocess.check_call([makeprg, "html"], env=env, cwd=Path("help"))
     else:
         print("No help directory exists in the current directory")
 
@@ -409,12 +405,10 @@ def translate(config):
             locales = cfg.get("files", "locales").split()
             if locales:
                 for locale in locales:
-                    name, ext = os.path.splitext(locale)
-                    if ext != ".ts":
-                        locale = name + ".ts"
-                    subprocess.check_call([cmd, os.path.join("i18n", locale)])
+                    locale = Path(locale).with_suffix(".ts")
+                    subprocess.check_call([cmd, Path("i18n") / locale])
             else:
-                print("No translations are specified in {0}".format(config))
+                print(f"No translations are specified in {config}")
 
 
 @cli.command()
@@ -485,13 +479,7 @@ def zip(config_file, quick, plugin_path, no_docs, release_version):
     else:
         # Check to see if the plugin directory exists, otherwise we can't
         # do a quick zip
-        if not os.path.exists(os.path.join(plugin_path, name)):
-            # click.secho(
-            #     "You must deploy the plugin before you can package it using -q",
-            #     fg='red')
-            # proceed = click.confirm(
-            #     'Do you want to deploy and proceed with packaging?')
-            # if proceed:
+        if not Path(plugin_path).joinpath(name).exists():
             deploy_files(config_file, plugin_path=plugin_path, build_help=not no_docs, confirm=False)
         proceed = True
 
@@ -500,8 +488,8 @@ def zip(config_file, quick, plugin_path, no_docs, release_version):
     # confirm = True
     if proceed:
         # inject version/git info into the deployed metadata.txt before zipping
-        metadata_path = os.path.join(plugin_path, name, "metadata.txt")
-        if os.path.exists(metadata_path):
+        metadata_path = Path(plugin_path) / name / "metadata.txt"
+        if metadata_path.exists():
             patch_metadata(metadata_path, release_version)
             click.secho("Patched metadata.txt with build info", fg="green")
         elif release_version:
@@ -511,31 +499,30 @@ def zip(config_file, quick, plugin_path, no_docs, release_version):
             )
 
         # delete the zip if it exists
-        if os.path.exists("{0}.zip".format(name)):
-            os.unlink("{0}.zip".format(name))
-        cwd = os.getcwd()
-        os.chdir(plugin_path)
-        # click.secho("Current directory is {}".format(os.getcwd()), fg='magenta')
+        zip_path = Path(f"{name}.zip").absolute()
+        if zip_path.exists():
+            zip_path.unlink()
         if use_7z:
             subprocess.check_call(
                 [
                     zip,
                     "a",
                     "-r",
-                    os.path.join(cwd, "{0}.zip".format(name)),
+                    str(zip_path),
                     name,
                     "-xr!__pycache__",
                     "-xr!*.pyc",
                     "-xr!.buildinfo",
                     "-xr!.buildinfo.bak",
-                ]
+                ],
+                cwd=plugin_path,
             )
         else:
             subprocess.check_call(
                 [
                     zip,
                     "-r",
-                    os.path.join(cwd, "{0}.zip".format(name)),
+                    str(zip_path),
                     name,
                     "-x",
                     "*/__pycache__/*",
@@ -545,11 +532,10 @@ def zip(config_file, quick, plugin_path, no_docs, release_version):
                     "*/.buildinfo",
                     "-x",
                     "*/.buildinfo.bak",
-                ]
+                ],
+                cwd=plugin_path,
             )
-        os.chdir(cwd)
-
-        print("The {0}.zip archive has been created in the current directory".format(name))
+        print(f"The {name}.zip archive has been created in the current directory")
 
 
 @cli.command()
@@ -624,13 +610,13 @@ def validate(config_file):
 )
 def list(config_file):
     """List the contents of the configuration file"""
-    if os.path.exists(config_file):
+    if Path(config_file).exists():
         with open(config_file) as cfg:
             for line in cfg:
                 print(line[:-1])
     else:
         click.secho(
-            "There is no {0} file in the current directory".format(config_file),
+            f"There is no {config_file} file in the current directory",
             fg="red",
         )
         click.secho("We can't do anything without it", fg="red")
@@ -696,7 +682,7 @@ def config(name, package):
     locale_list = glob.glob("i18n/*.ts")
     locales = []
     for locale in locale_list:
-        locales.append(os.path.basename(locale))
+        locales.append(Path(locale).name)
 
     cfg = template.substitute(
         Name=cfg_name,
@@ -709,15 +695,15 @@ def config(name, package):
     )
 
     fname = name
-    if os.path.exists(fname):
-        confirm = click.confirm("{0} exists. Overwrite?".format(name))
+    if Path(fname).exists():
+        confirm = click.confirm(f"{name} exists. Overwrite?")
         if not confirm:
             fname = click.prompt("Enter a name for the config file:")
 
     with open(fname, "w") as f:
         f.write(cfg)
 
-    print("Created new config file in {0}".format(fname))
+    print(f"Created new config file in {fname}")
 
 
 @cli.command()
@@ -789,61 +775,59 @@ def create(plugin_type, name, class_name, title, description, author, email):
         **type_cfg[plugin_type],
     }
 
-    tmpl_dir = os.path.join(os.path.dirname(__file__), "templates", plugin_type)
-    if not os.path.exists(tmpl_dir):
-        click.secho("No templates found for type '{0}'".format(plugin_type), fg="red")
+    tmpl_dir = Path(__file__).parent / "templates" / plugin_type
+    if not tmpl_dir.exists():
+        click.secho(f"No templates found for type '{plugin_type}'", fg="red")
         sys.exit(1)
 
     out_dir = name
-    if os.path.exists(out_dir):
-        if not click.confirm("Directory '{0}' exists. Overwrite?".format(out_dir)):
+    if Path(out_dir).exists():
+        if not click.confirm(f"Directory '{out_dir}' exists. Overwrite?"):
             return
-    os.makedirs(out_dir, exist_ok=True)
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
 
     file_map = {
         "__init__.tmpl": "__init__.py",
-        "module_name.tmpl": "{0}.py".format(name),
-        "module_name_provider.tmpl": "{0}_provider.py".format(name),
-        "module_name_algorithm.tmpl": "{0}_algorithm.py".format(name),
-        "module_name_dialog.tmpl": "{0}_dialog.py".format(name),
-        "module_name_dialog_base.ui.tmpl": "{0}_dialog_base.ui".format(name),
-        "module_name_dockwidget.tmpl": "{0}_dockwidget.py".format(name),
-        "module_name_dockwidget_base.ui.tmpl": "{0}_dockwidget_base.ui".format(name),
+        "module_name.tmpl": f"{name}.py",
+        "module_name_provider.tmpl": f"{name}_provider.py",
+        "module_name_algorithm.tmpl": f"{name}_algorithm.py",
+        "module_name_dialog.tmpl": f"{name}_dialog.py",
+        "module_name_dialog_base.ui.tmpl": f"{name}_dialog_base.ui",
+        "module_name_dockwidget.tmpl": f"{name}_dockwidget.py",
+        "module_name_dockwidget_base.ui.tmpl": f"{name}_dockwidget_base.ui",
         "readme.tmpl": "README.md",
     }
 
     for tmpl_file, out_file in file_map.items():
-        tmpl_path = os.path.join(tmpl_dir, tmpl_file)
-        if not os.path.exists(tmpl_path):
+        tmpl_path = tmpl_dir / tmpl_file
+        if not tmpl_path.exists():
             continue
         with open(tmpl_path) as f:
             content = Template(f.read()).safe_substitute(subs)
-        out_path = os.path.join(out_dir, out_file)
+        out_path = Path(out_dir) / out_file
         with open(out_path, "w") as f:
             f.write(content)
-        click.secho("Created {0}".format(out_path), fg="green")
+        click.secho(f"Created {out_path}", fg="green")
 
     # copy icon.png from templates root into the output directory
-    icon_src = os.path.join(os.path.dirname(__file__), "templates", "icon.png")
-    if os.path.exists(icon_src):
-        icon_dst = os.path.join(out_dir, "icon.png")
+    icon_src = Path(__file__).parent / "templates" / "icon.png"
+    if icon_src.exists():
+        icon_dst = Path(out_dir) / "icon.png"
         shutil.copy2(icon_src, icon_dst)
-        click.secho("Created {0}".format(icon_dst), fg="green")
+        click.secho(f"Created {icon_dst}", fg="green")
 
     # generate pb_tool.cfg
-    pb_tool_tmpl_path = os.path.join(os.path.dirname(__file__), "templates", "pb_tool.tmpl")
-    if os.path.exists(pb_tool_tmpl_path):
+    pb_tool_tmpl_path = Path(__file__).parent / "templates" / "pb_tool.tmpl"
+    if pb_tool_tmpl_path.exists():
         with open(pb_tool_tmpl_path) as f:
             cfg_content = Template(f.read()).safe_substitute(subs)
-        cfg_path = os.path.join(out_dir, "pb_tool.cfg")
+        cfg_path = Path(out_dir) / "pb_tool.cfg"
         with open(cfg_path, "w") as f:
             f.write(cfg_content)
-        click.secho("Created {0}".format(cfg_path), fg="green")
+        click.secho(f"Created {cfg_path}", fg="green")
 
     click.secho(
-        "\nPlugin skeleton created in '{0}/'. Add a metadata.txt and run pb_tool deploy to get started.".format(
-            out_dir
-        ),
+        f"\nPlugin skeleton created in '{out_dir}/'. Add a metadata.txt and run pb_tool deploy to get started.",
         fg="green",
     )
 
@@ -855,7 +839,7 @@ def update():
         conn = http.client.HTTPSConnection("pypi.org")
         conn.request("GET", "/pypi/pb_tool/json")
         version = json.loads(conn.getresponse().read())["info"]["version"]
-        click.secho("Latest version is %s" % version, fg="green")
+        click.secho(f"Latest version is {version}", fg="green")
         if __version() == "unknown":
             click.secho("Unable to determine your installed version", fg="yellow")
             return
@@ -866,16 +850,18 @@ def update():
         if this_version == current_version:
             click.secho("Your version is up to date", fg="green")
         elif current_version > this_version:
-            click.secho("You have Version %s" % __version(), fg="green")
+            click.secho(f"You have Version {__version()}", fg="green")
             click.secho("You can upgrade by running this command:")
             cmd = "pip install --upgrade pb_tool"
-            print("   %s" % cmd)
+            print(f"   {cmd}")
         elif this_version > current_version:
-            click.secho("You have development Version %s" % __version(), fg="green")
+            click.secho(f"You have development Version {__version()}", fg="green")
 
     except (http.client.HTTPException, OSError) as uoops:
         click.secho("Unable to check for update.")
-        click.secho("%s" % uoops)
+        click.secho(f"{uoops}")
+    finally:
+        conn.close()
 
 
 def check_cfg(cfg, section, name):
@@ -885,7 +871,7 @@ def check_cfg(cfg, section, name):
     except configparser.NoOptionError as oops:
         print(str(oops))
     except configparser.NoSectionError:
-        print("Missing section '{0}' when looking for option '{1}'".format(section, name))
+        print(f"Missing section '{section}' when looking for option '{name}'")
     return False
 
 
@@ -893,26 +879,23 @@ def get_config(config="pb_tool.cfg"):
     """
     Read the config file pb_tools.cfg and return it
     """
-    if os.path.exists(config):
+    if Path(config).exists():
         cfg = configparser.ConfigParser()
         cfg.read(config)
         # click.echo(cfg.sections())
         return cfg
     else:
-        print("There is no {0} file in the current directory".format(config))
+        print(f"There is no {config} file in the current directory")
         print("We can't do anything without it")
         sys.exit(1)
 
 
 def compiled_ui(cfg):
-    # cfg = get_config(config)
     try:
         uis = cfg.get("files", "compiled_ui_files").split()
         compiled = []
         for ui in uis:
-            base, ext = os.path.splitext(ui)
-            compiled.append("{0}.py".format(base))
-            # print("Compiled UI files: {}".format(compiled))
+            compiled.append(str(Path(ui).with_suffix(".py")))
         return compiled
     except configparser.NoSectionError as oops:
         print(str(oops))
@@ -920,14 +903,11 @@ def compiled_ui(cfg):
 
 
 def compiled_resource(cfg):
-    # cfg = get_config(config)
     try:
         res_files = cfg.get("files", "resource_files").split()
         compiled = []
         for res in res_files:
-            base, ext = os.path.splitext(res)
-            compiled.append("{0}.py".format(base))
-            # print("Compiled resource files: {}".format(compiled))
+            compiled.append(str(Path(res).with_suffix(".py")))
         return compiled
     except configparser.NoSectionError as oops:
         print(str(oops))
@@ -960,21 +940,20 @@ def compile_files(cfg):
         if sys.platform == "win32":
             print("On Windows, run pb_tool from the OSGeo4W shell, or add the OSGeo4W bin directory to your PATH.")
     else:
-        print("Using Qt{0} ({1})".format(qt_version, pyuic))
+        print(f"Using Qt{qt_version} ({pyuic})")
         ui_count = 0
         for ui in ui_files:
-            if os.path.exists(ui):
-                base, ext = os.path.splitext(ui)
-                output = "{0}.py".format(base)
+            if Path(ui).exists():
+                output = str(Path(ui).with_suffix(".py"))
                 if file_changed(ui, output):
-                    print("Compiling {0} to {1}".format(ui, output))
+                    print(f"Compiling {ui} to {output}")
                     subprocess.check_call([pyuic, "-o", output, ui])
                     ui_count += 1
                 else:
-                    print("Skipping {0} (unchanged)".format(ui))
+                    print(f"Skipping {ui} (unchanged)")
             else:
-                print("{0} does not exist---skipped".format(ui))
-        print("Compiled {0} UI files".format(ui_count))
+                print(f"{ui} does not exist---skipped")
+        print(f"Compiled {ui_count} UI files")
 
     if not res_files:
         print("Compiled 0 resource files")
@@ -1002,11 +981,10 @@ def compile_files(cfg):
 
     res_count = 0
     for res in res_files:
-        if os.path.exists(res):
-            base, ext = os.path.splitext(res)
-            output = "{0}.py".format(base)
+        if Path(res).exists():
+            output = str(Path(res).with_suffix(".py"))
             if file_changed(res, output):
-                print("Compiling {0} to {1}".format(res, output))
+                print(f"Compiling {res} to {output}")
                 cmd = []
                 if qt_version == 6:
                     cmd += [rcc, "-g", "python"]
@@ -1055,16 +1033,16 @@ def copy(source, destination):
 
 
 def get_plugin_directory():
-    home = os.path.expanduser("~")
+    home = Path.home()
     if sys.platform == "win32":
-        appdata = os.environ.get("APPDATA", home)
+        appdata = Path(os.environ.get("APPDATA", home))
         candidates = [
-            os.path.join(appdata, "QGIS", "QGIS4", "profiles", "default", "python", "plugins"),
-            os.path.join(appdata, "QGIS", "QGIS3", "profiles", "default", "python", "plugins"),
+            Path(appdata, "QGIS", "QGIS4", "profiles", "default", "python", "plugins"),
+            Path(appdata, "QGIS", "QGIS3", "profiles", "default", "python", "plugins"),
         ]
         default = candidates[0]
     else:
-        qgis4 = os.path.join(
+        qgis4 = Path(
             home,
             ".local",
             "share",
@@ -1075,7 +1053,7 @@ def get_plugin_directory():
             "python",
             "plugins",
         )
-        qgis3 = os.path.join(
+        qgis3 = Path(
             home,
             ".local",
             "share",
@@ -1089,7 +1067,7 @@ def get_plugin_directory():
         candidates = [qgis4, qgis3]
         default = qgis4
     for path in candidates:
-        if os.path.exists(path):
+        if Path(path).exists():
             return path
     return default
 
@@ -1153,37 +1131,13 @@ target: help
 
 
 def check_path(app):
-    """Adapted from StackExchange:
-    http://stackoverflow.com/questions/377017
-    """
-    import os
-
-    def is_exe(fpath):
-        return os.path.exists(fpath) and os.access(fpath, os.X_OK)
-
-    def ext_candidates(fpath):
-        yield fpath
-        for ext in os.environ.get("PATHEXT", "").split(os.pathsep):
-            yield fpath + ext
-
-    fpath, fname = os.path.split(app)
-    if fpath:
-        if is_exe(app):
-            return app
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            exe_file = os.path.join(path, app)
-            for candidate in ext_candidates(exe_file):
-                if is_exe(candidate):
-                    return candidate
-
-    return None
+    return shutil.which(app)
 
 
 def file_changed(infile, outfile):
     try:
-        infile_s = os.stat(infile)
-        outfile_s = os.stat(outfile)
+        infile_s = Path(infile).stat()
+        outfile_s = Path(outfile).stat()
         return infile_s.st_mtime > outfile_s.st_mtime
     except OSError:
         return True
