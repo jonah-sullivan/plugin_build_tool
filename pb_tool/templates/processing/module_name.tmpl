@@ -37,7 +37,7 @@ import inspect
 from qgis.core import QgsProcessingAlgorithm, QgsApplication
 from .${TemplateModuleName}_provider import ${TemplateClass}Provider
 
-cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
+cmd_folder = str(Path(inspect.getfile(inspect.currentframe())).parent)
 
 if cmd_folder not in sys.path:
     sys.path.insert(0, cmd_folder)

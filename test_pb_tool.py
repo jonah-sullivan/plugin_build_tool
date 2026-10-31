@@ -1,3 +1,5 @@
+import ast
+import builtins
 import configparser
 import json
 import os
@@ -327,6 +329,57 @@ def test_create_dockwidget_files():
         content = (Path("my_plugin") / "my_plugin_dockwidget.py").read_text()
         assert "MyPlugin" in content
         assert "$Template" not in content
+
+
+def _undefined_names(tree):
+    """Names that are read somewhere in the module but never bound or imported."""
+    bound = set(dir(builtins)) | {"__file__", "__name__", "__doc__", "__package__", "__spec__"}
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            bound.update((a.asname or a.name).split(".")[0] for a in node.names)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            bound.add(node.name)
+        elif isinstance(node, ast.arg):
+            bound.add(node.arg)
+        elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            bound.add(node.id)
+        elif isinstance(node, ast.ExceptHandler) and node.name:
+            bound.add(node.name)
+    return {n.id for n in ast.walk(tree) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)} - bound
+
+
+@pytest.mark.parametrize("plugin_type", ["processing", "dialog", "dockwidget"])
+def test_create_generates_valid_python(plugin_type):
+    """Every generated .py file compiles and references no undefined names."""
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            pb_tool.cli,
+            [
+                "create",
+                "--type",
+                plugin_type,
+                "--name",
+                "my_plugin",
+                "--class_name",
+                "MyPlugin",
+                "--title",
+                "My Plugin",
+                "--description",
+                "A test plugin",
+                "--author",
+                "Test Author",
+                "--email",
+                "test@example.com",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        py_files = list(Path("my_plugin").glob("*.py"))
+        assert py_files
+        for py_file in py_files:
+            source = py_file.read_text()
+            tree = ast.parse(source, filename=str(py_file))
+            compile(tree, str(py_file), "exec")
+            assert not _undefined_names(tree), f"{py_file}: undefined {_undefined_names(tree)}"
 
 
 def test_doc():

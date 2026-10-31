@@ -29,8 +29,7 @@ from qgis.PyQt import QtWidgets
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(
-    Path(__file__).parent().resolve() / 'ui' /,
-        '${TemplateModuleName}_dialog_base.ui')
+    str(Path(__file__).resolve().parent / '${TemplateModuleName}_dialog_base.ui'))
 
 
 class ${TemplateClass}Dialog(QtWidgets.QDialog, FORM_CLASS):

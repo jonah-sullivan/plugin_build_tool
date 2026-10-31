@@ -219,7 +219,6 @@ def install_files(plugin_dir, cfg, copy_help=True):
             dest = plugin_dir / file
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(file, dest)
-            print()
         except Exception as oops:
             errors.append(f"Error copying files: {file}, {oops.strerror}")
             click.echo(click.style(" ----> ERROR", fg="red"))
@@ -368,7 +367,7 @@ def build_docs():
     if Path("help").exists():
         # skip if no make file found
         makefile = "make.bat" if sys.platform == "win32" else "Makefile"
-        if not os.path.exists(os.path.join("help", makefile)):
+        if not (Path("help") / makefile).exists():
             print("No help Makefile found---skipping help build")
             return
         click.echo("Building the help documentation")
@@ -830,8 +829,8 @@ def create(plugin_type, name, class_name, title, description, author, email):
 @cli.command()
 def update():
     """Check for update to pb_tool"""
+    conn = http.client.HTTPSConnection("pypi.org")
     try:
-        conn = http.client.HTTPSConnection("pypi.org")
         conn.request("GET", "/pypi/pb_tool/json")
         version = json.loads(conn.getresponse().read())["info"]["version"]
         click.secho(f"Latest version is {version}", fg="green")
