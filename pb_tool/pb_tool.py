@@ -366,6 +366,11 @@ def doc():
 def build_docs():
     """Build the docs using sphinx"""
     if Path("help").exists():
+        # skip if no make file found
+        makefile = "make.bat" if sys.platform == "win32" else "Makefile"
+        if not os.path.exists(os.path.join("help", makefile)):
+            print("No help Makefile found---skipping help build")
+            return
         click.echo("Building the help documentation")
         if sys.platform == "win32":
             makeprg = "make.bat"
