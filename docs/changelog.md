@@ -1,4 +1,17 @@
 # Changelog
+## [3.5.4] - 2026-10-31
+
+### Fixed
+- `pb_tool update` compares versions correctly (e.g. 3.10.0 vs 3.9.0) using
+  `packaging`, which is a new dependency
+
+### Changed
+- Help docs build is skipped when `help/` has no `Makefile`/`make.bat`
+- Internals converted from `os.path` to `pathlib`; generated plugin templates
+  use `pathlib` too
+- Expanded test suite
+
+
 ## [3.5.3] - 2026-08-28
 
 ### Added
