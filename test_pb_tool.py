@@ -57,6 +57,7 @@ compiled_ui_files:
 resource_files:
 extras:
 extra_dirs: bar
+excluded_files:
 locales:
 """
 
@@ -394,11 +395,12 @@ def test_deploy():
         assert result.exit_code == 0
 
 
-def _write_legacy_plugin_files():
-    Path("pb_tool.cfg").write_text(LEGACY_CFG_NO_HELP)
+def _write_legacy_plugin_files(search="", replace=""):
+    Path("pb_tool.cfg").write_text(LEGACY_CFG_NO_HELP.replace(search, replace))
     Path("__init__.py").write_text("")
     Path("bar").mkdir(parents=True, exist_ok=True)
     (Path("bar") / "baz.txt").write_text("baz")
+    (Path("bar") / "foo.txt").write_text("foo")
 
 
 def test_deploy_quick_no_docs_without_help_section():
@@ -408,6 +410,7 @@ def test_deploy_quick_no_docs_without_help_section():
         assert result.exit_code == 0
         assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
         assert (Path("deploy_build") / "TestPlugin" / "bar" / "baz.txt").exists()
+        assert (Path("deploy_build") / "TestPlugin" / "bar" / "foo.txt").exists()
 
 
 def test_deploy_full_without_help_section():
@@ -441,6 +444,17 @@ def test_deploy_missing_extra_dir_fails():
         assert "ERRORS:" in result.output
         assert "Error copying directory: nodir" in result.output
         assert (Path("deploy_build") / "TestPlugin" / "bar" / "baz.txt").exists()
+        assert (Path("deploy_build") / "TestPlugin" / "bar" / "foo.txt").exists()
+
+
+def test_deploy_skips_excluded_files():
+    with runner.isolated_filesystem():
+        _write_legacy_plugin_files("excluded_files:", "excluded_files: foo.*")
+        result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
+        assert result.exit_code == 0
+        assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
+        assert (Path("deploy_build") / "TestPlugin" / "bar" / "baz.txt").exists()
+        assert not (Path("deploy_build") / "TestPlugin" / "bar" / "foo.txt").exists()
 
 
 LEGACY_CFG_WITH_HELP = (
