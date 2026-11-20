@@ -1,4 +1,12 @@
 # Changelog
+## [Unreleased]
+
+### Changed
+- `excluded_files` now also applies to `extra_dirs` and the help directory
+  when they are copied. Inside these directories, patterns match file and
+  directory names (not full paths) at any depth (#50)
+- Removed the unused `copy()` helper (#50)
+
 ## [3.5.4] - 2026-10-31
 
 ### Fixed

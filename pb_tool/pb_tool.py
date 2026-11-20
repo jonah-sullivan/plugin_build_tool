@@ -21,7 +21,6 @@
 __author__ = "jonah-sullivan"
 
 import configparser
-import errno
 import fnmatch
 import glob
 import http.client
@@ -1079,7 +1078,9 @@ resource_files: $Resources
 # Other files required for the plugin
 extras: $Extras
 
-# Files to exclude from deployment (glob patterns, space-separated)
+# Files to exclude from deployment (glob patterns, space-separated).
+# Patterns are matched against the paths listed above, and against file and
+# directory names (not full paths) inside extra_dirs and the help directory.
 excluded_files:
 
 # Other directories to be deployed with the plugin.

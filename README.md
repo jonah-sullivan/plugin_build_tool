@@ -86,7 +86,7 @@ resource_files: resources.qrc
 extras: metadata.txt icon.png
 
 # Files to exclude from deployment (glob patterns, space-separated)
-excluded_files:
+excluded_files: *.pyc __pycache__
 
 # Subdirectories to deploy alongside the plugin
 extra_dirs: i18n
@@ -102,6 +102,11 @@ target: help
 ```
 
 All paths are relative to the directory where you run pb_tool. The `name` value must match the folder name used in the QGIS plugins directory.
+
+`excluded_files` patterns apply in two ways:
+
+- **Listed files** (`python_files`, `main_dialog`, compiled UI/resource files, `extras`): each pattern is matched against the path as written in the config, so `sub/foo.py` or `sub/*.py` work.
+- **Copied directories** (`extra_dirs` and the help directory): each pattern is matched against the *name* of every file and subdirectory at any depth, not its full path. `*.pyc` skips every `.pyc` file, and `tests` skips every directory named `tests`. Patterns containing a `/` will not match anything here.
 
 ### Resource files: `os.path` vs `rcc` compilation
 
