@@ -1001,29 +1001,6 @@ def compile_files(cfg):
     print(f"Compiled {res_count} resource files")
 
 
-def copy(source, destination):
-    """Copy files recursively.
-
-    Taken from: http://www.pythoncentral.io/
-                how-to-recursively-copy-a-directory-folder-in-python/
-
-    :param source: Source directory.
-    :type source: str
-
-    :param destination: Destination directory.
-    :type destination: str
-
-    """
-    try:
-        shutil.copytree(source, destination, dirs_exist_ok=True)
-    except OSError as e:
-        # If the error was caused because the source wasn't a directory
-        if e.errno == errno.ENOTDIR:
-            shutil.copy(source, destination)
-        else:
-            print("Directory not copied. Error: %s" % e)
-
-
 def get_plugin_directory():
     home = Path.home()
     if sys.platform == "win32":
