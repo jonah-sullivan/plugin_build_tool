@@ -213,6 +213,7 @@ def install_files(plugin_dir, cfg, copy_help=True):
 
     fail = False
     extra_dirs = cfg.get("files", "extra_dirs", fallback="").split()
+    exclusions = cfg.get("files", "excluded_files", fallback="").split()
     for file in install_files:
         click.secho(f"Copying {file}", fg="magenta")
         try:
@@ -229,7 +230,7 @@ def install_files(plugin_dir, cfg, copy_help=True):
             fg="magenta",
         )
         try:
-            shutil.copytree(xdir, plugin_dir / xdir, dirs_exist_ok=True)
+            shutil.copytree(xdir, plugin_dir / xdir, dirs_exist_ok=True, ignore=shutil.ignore_patterns(*exclusions))
         except Exception as oops:
             errors.append(f"Error copying directory: {xdir}, {oops}")
             click.echo(click.style(" ----> ERROR", fg="red"))
@@ -243,7 +244,7 @@ def install_files(plugin_dir, cfg, copy_help=True):
             help_target = plugin_dir / help_target_name
             click.secho(f"Copying {help_src} to {help_target}", fg="magenta")
             try:
-                shutil.copytree(help_src, help_target, dirs_exist_ok=True)
+                shutil.copytree(help_src, help_target, dirs_exist_ok=True, ignore=shutil.ignore_patterns(*exclusions))
             except Exception as oops:
                 errors.append(f"Error copying help files: {help_src}, {oops}")
                 click.echo(click.style(" ----> ERROR", fg="red"))
