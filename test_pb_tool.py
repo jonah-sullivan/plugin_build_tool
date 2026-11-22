@@ -26,6 +26,20 @@ def _isolated_qgis_plugin_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(pb_tool, "get_plugin_directory", lambda: tmp_path / "qgis_plugins")
 
 
+@pytest.fixture
+def in_tmp_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Run the test from an empty working directory; pb_tool resolves its config
+    and source files relative to the cwd.
+
+    Uses a subdirectory so the cwd stays separate from tmp_path / "qgis_plugins",
+    the default deploy target set by _isolated_qgis_plugin_dir.
+    """
+    work = tmp_path / "work"
+    work.mkdir()
+    monkeypatch.chdir(work)
+    return work
+
+
 MINIMAL_CFG = """
 [plugin]
 name: TestPlugin
@@ -70,18 +84,18 @@ def _read_cfg(text: str) -> configparser.ConfigParser:
     return cfg
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_validate() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG)
-        result = runner.invoke(pb_tool.cli, ["validate"])
-        assert result.exit_code == 0
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG)
+    result = runner.invoke(pb_tool.cli, ["validate"])
+    assert result.exit_code == 0
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_clean() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG)
-        result = runner.invoke(pb_tool.cli, ["clean"])
-        assert result.exit_code == 0
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG)
+    result = runner.invoke(pb_tool.cli, ["clean"])
+    assert result.exit_code == 0
 
 
 CLEAN_CFG = MINIMAL_CFG.replace("compiled_ui_files:", "compiled_ui_files: settings.ui forms/extra.ui").replace(
@@ -89,51 +103,52 @@ CLEAN_CFG = MINIMAL_CFG.replace("compiled_ui_files:", "compiled_ui_files: settin
 )
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_clean_deletes_compiled_files() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(CLEAN_CFG)
-        Path("forms").mkdir()
-        sources = ["settings.ui", "forms/extra.ui", "resources.qrc", "my_plugin.py"]
-        compiled = ["settings.py", "forms/extra.py", "resources.py"]
-        for name in sources + compiled:
-            Path(name).write_text("")
+    Path("pb_tool.cfg").write_text(CLEAN_CFG)
+    Path("forms").mkdir()
+    sources = ["settings.ui", "forms/extra.ui", "resources.qrc", "my_plugin.py"]
+    compiled = ["settings.py", "forms/extra.py", "resources.py"]
+    for name in sources + compiled:
+        Path(name).write_text("")
 
-        result = runner.invoke(pb_tool.cli, ["clean"])
-        assert result.exit_code == 0
-        for name in compiled:
-            assert not Path(name).exists()
-            assert f"Deleted: {Path(name)}" in result.output
-        # the .ui/.qrc sources and unrelated .py files are left alone
-        for name in sources:
-            assert Path(name).exists()
+    result = runner.invoke(pb_tool.cli, ["clean"])
+    assert result.exit_code == 0
+    for name in compiled:
+        assert not Path(name).exists()
+        assert f"Deleted: {Path(name)}" in result.output
+    # the .ui/.qrc sources and unrelated .py files are left alone
+    for name in sources:
+        assert Path(name).exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_clean_reports_missing_compiled_files() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(CLEAN_CFG)
-        Path("resources.py").write_text("")
+    Path("pb_tool.cfg").write_text(CLEAN_CFG)
+    Path("resources.py").write_text("")
 
-        result = runner.invoke(pb_tool.cli, ["clean"])
-        # a missing file is reported, not fatal, and the rest still get deleted
-        assert result.exit_code == 0
-        assert "Couldn't delete settings.py" in result.output
-        assert not Path("resources.py").exists()
+    result = runner.invoke(pb_tool.cli, ["clean"])
+    # a missing file is reported, not fatal, and the rest still get deleted
+    assert result.exit_code == 0
+    assert "Couldn't delete settings.py" in result.output
+    assert not Path("resources.py").exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_cleandocs() -> None:
     result = runner.invoke(pb_tool.cli, ["clean-docs"])
     assert result.exit_code == 0
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_config() -> None:
-    with runner.isolated_filesystem():
-        result = runner.invoke(
-            pb_tool.cli,
-            ["config", "--name", "test_from_pytest.cfg", "--package", "testname"],
-            input="y\n",
-        )
-        assert result.exit_code == 0
-        assert Path("test_from_pytest.cfg").exists()
+    result = runner.invoke(
+        pb_tool.cli,
+        ["config", "--name", "test_from_pytest.cfg", "--package", "testname"],
+        input="y\n",
+    )
+    assert result.exit_code == 0
+    assert Path("test_from_pytest.cfg").exists()
 
 
 def _write_plugin_sources() -> None:
@@ -154,184 +169,184 @@ def _write_plugin_sources() -> None:
     Path("i18n", "foo_fr.ts").write_text("")
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_config_discovers_source_files() -> None:
-    with runner.isolated_filesystem():
-        _write_plugin_sources()
-        result = runner.invoke(pb_tool.cli, ["config", "--name", "discovered.cfg", "--package", "foo"])
-        assert result.exit_code == 0
-        cfg = _read_cfg(Path("discovered.cfg").read_text())
+    _write_plugin_sources()
+    result = runner.invoke(pb_tool.cli, ["config", "--name", "discovered.cfg", "--package", "foo"])
+    assert result.exit_code == 0
+    cfg = _read_cfg(Path("discovered.cfg").read_text())
 
-        def files(option: str) -> set[str]:
-            # glob order depends on the filesystem, so compare as sets
-            return set(cfg.get("files", option).split())
+    def files(option: str) -> set[str]:
+        # glob order depends on the filesystem, so compare as sets
+        return set(cfg.get("files", option).split())
 
-        assert cfg.get("plugin", "name") == "foo"
-        assert files("python_files") == {"__init__.py", "foo.py", "foo_dialog.py"}
-        assert files("main_dialog") == {"foo_dialog_base.ui"}
-        # the main dialog is not repeated in compiled_ui_files
-        assert files("compiled_ui_files") == {"settings.ui"}
-        assert files("resource_files") == {"resources.qrc"}
-        # only *.png and metadata.txt are picked up as extras
-        assert files("extras") == {"icon.png", "metadata.txt"}
-        # locales are stored by file name only, without the i18n/ prefix
-        assert files("locales") == {"foo_de.ts", "foo_fr.ts"}
+    assert cfg.get("plugin", "name") == "foo"
+    assert files("python_files") == {"__init__.py", "foo.py", "foo_dialog.py"}
+    assert files("main_dialog") == {"foo_dialog_base.ui"}
+    # the main dialog is not repeated in compiled_ui_files
+    assert files("compiled_ui_files") == {"settings.ui"}
+    assert files("resource_files") == {"resources.qrc"}
+    # only *.png and metadata.txt are picked up as extras
+    assert files("extras") == {"icon.png", "metadata.txt"}
+    # locales are stored by file name only, without the i18n/ prefix
+    assert files("locales") == {"foo_de.ts", "foo_fr.ts"}
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_config_empty_directory() -> None:
-    with runner.isolated_filesystem():
-        result = runner.invoke(pb_tool.cli, ["config", "--name", "empty.cfg", "--package", "foo"])
-        assert result.exit_code == 0
-        cfg = _read_cfg(Path("empty.cfg").read_text())
-        for option in ["python_files", "main_dialog", "compiled_ui_files", "resource_files", "extras", "locales"]:
-            assert cfg.get("files", option) == ""
+    result = runner.invoke(pb_tool.cli, ["config", "--name", "empty.cfg", "--package", "foo"])
+    assert result.exit_code == 0
+    cfg = _read_cfg(Path("empty.cfg").read_text())
+    for option in ["python_files", "main_dialog", "compiled_ui_files", "resource_files", "extras", "locales"]:
+        assert cfg.get("files", option) == ""
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_config_default_name_declined_does_not_write() -> None:
-    with runner.isolated_filesystem():
-        result = runner.invoke(pb_tool.cli, ["config", "--package", "foo"], input="n\n")
-        assert result.exit_code == 0
-        assert "This will overwrite any existing pb_tool.cfg" in result.output
-        assert not Path("pb_tool.cfg").exists()
+    result = runner.invoke(pb_tool.cli, ["config", "--package", "foo"], input="n\n")
+    assert result.exit_code == 0
+    assert "This will overwrite any existing pb_tool.cfg" in result.output
+    assert not Path("pb_tool.cfg").exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_create() -> None:
-    with runner.isolated_filesystem():
-        result = runner.invoke(
-            pb_tool.cli,
-            [
-                "create",
-                "--name",
-                "my_plugin",
-                "--class_name",
-                "MyPlugin",
-                "--title",
-                "My Plugin",
-                "--description",
-                "A test plugin",
-                "--author",
-                "Test Author",
-                "--email",
-                "test@example.com",
-            ],
-        )
-        assert result.exit_code == 0
+    result = runner.invoke(
+        pb_tool.cli,
+        [
+            "create",
+            "--name",
+            "my_plugin",
+            "--class_name",
+            "MyPlugin",
+            "--title",
+            "My Plugin",
+            "--description",
+            "A test plugin",
+            "--author",
+            "Test Author",
+            "--email",
+            "test@example.com",
+        ],
+    )
+    assert result.exit_code == 0
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_create_processing_files() -> None:
     """create --type processing produces the expected files with substituted content."""
-    with runner.isolated_filesystem():
-        result = runner.invoke(
-            pb_tool.cli,
-            [
-                "create",
-                "--type",
-                "processing",
-                "--name",
-                "my_plugin",
-                "--class_name",
-                "MyPlugin",
-                "--title",
-                "My Plugin",
-                "--description",
-                "A test plugin",
-                "--author",
-                "Test Author",
-                "--email",
-                "test@example.com",
-            ],
-        )
-        assert result.exit_code == 0
-        for expected in [
-            Path("my_plugin") / "__init__.py",
-            Path("my_plugin") / "my_plugin.py",
-            Path("my_plugin") / "my_plugin_algorithm.py",
-            Path("my_plugin") / "my_plugin_provider.py",
-            Path("my_plugin") / "README.md",
-            Path("my_plugin") / "pb_tool.cfg",
-        ]:
-            assert expected.exists(), f"{expected} was not created"
-        content = (Path("my_plugin") / "my_plugin.py").read_text()
-        assert "MyPlugin" in content
-        assert "Test Author" in content
-        assert "$Template" not in content
+    result = runner.invoke(
+        pb_tool.cli,
+        [
+            "create",
+            "--type",
+            "processing",
+            "--name",
+            "my_plugin",
+            "--class_name",
+            "MyPlugin",
+            "--title",
+            "My Plugin",
+            "--description",
+            "A test plugin",
+            "--author",
+            "Test Author",
+            "--email",
+            "test@example.com",
+        ],
+    )
+    assert result.exit_code == 0
+    for expected in [
+        Path("my_plugin") / "__init__.py",
+        Path("my_plugin") / "my_plugin.py",
+        Path("my_plugin") / "my_plugin_algorithm.py",
+        Path("my_plugin") / "my_plugin_provider.py",
+        Path("my_plugin") / "README.md",
+        Path("my_plugin") / "pb_tool.cfg",
+    ]:
+        assert expected.exists(), f"{expected} was not created"
+    content = (Path("my_plugin") / "my_plugin.py").read_text()
+    assert "MyPlugin" in content
+    assert "Test Author" in content
+    assert "$Template" not in content
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_create_dialog_files() -> None:
     """create --type dialog produces the expected files with substituted content."""
-    with runner.isolated_filesystem():
-        result = runner.invoke(
-            pb_tool.cli,
-            [
-                "create",
-                "--type",
-                "dialog",
-                "--name",
-                "my_plugin",
-                "--class_name",
-                "MyPlugin",
-                "--title",
-                "My Plugin",
-                "--description",
-                "A test plugin",
-                "--author",
-                "Test Author",
-                "--email",
-                "test@example.com",
-            ],
-        )
-        assert result.exit_code == 0
-        for expected in [
-            Path("my_plugin") / "__init__.py",
-            Path("my_plugin") / "my_plugin.py",
-            Path("my_plugin") / "my_plugin_dialog.py",
-            Path("my_plugin") / "my_plugin_dialog_base.ui",
-            Path("my_plugin") / "icon.png",
-            Path("my_plugin") / "README.md",
-            Path("my_plugin") / "pb_tool.cfg",
-        ]:
-            assert expected.exists(), f"{expected} was not created"
-        content = (Path("my_plugin") / "my_plugin_dialog.py").read_text()
-        assert "MyPlugin" in content
-        assert "$Template" not in content
+    result = runner.invoke(
+        pb_tool.cli,
+        [
+            "create",
+            "--type",
+            "dialog",
+            "--name",
+            "my_plugin",
+            "--class_name",
+            "MyPlugin",
+            "--title",
+            "My Plugin",
+            "--description",
+            "A test plugin",
+            "--author",
+            "Test Author",
+            "--email",
+            "test@example.com",
+        ],
+    )
+    assert result.exit_code == 0
+    for expected in [
+        Path("my_plugin") / "__init__.py",
+        Path("my_plugin") / "my_plugin.py",
+        Path("my_plugin") / "my_plugin_dialog.py",
+        Path("my_plugin") / "my_plugin_dialog_base.ui",
+        Path("my_plugin") / "icon.png",
+        Path("my_plugin") / "README.md",
+        Path("my_plugin") / "pb_tool.cfg",
+    ]:
+        assert expected.exists(), f"{expected} was not created"
+    content = (Path("my_plugin") / "my_plugin_dialog.py").read_text()
+    assert "MyPlugin" in content
+    assert "$Template" not in content
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_create_dockwidget_files() -> None:
     """create --type dockwidget produces the expected files with substituted content."""
-    with runner.isolated_filesystem():
-        result = runner.invoke(
-            pb_tool.cli,
-            [
-                "create",
-                "--type",
-                "dockwidget",
-                "--name",
-                "my_plugin",
-                "--class_name",
-                "MyPlugin",
-                "--title",
-                "My Plugin",
-                "--description",
-                "A test plugin",
-                "--author",
-                "Test Author",
-                "--email",
-                "test@example.com",
-            ],
-        )
-        assert result.exit_code == 0
-        for expected in [
-            Path("my_plugin") / "__init__.py",
-            Path("my_plugin") / "my_plugin.py",
-            Path("my_plugin") / "my_plugin_dockwidget.py",
-            Path("my_plugin") / "my_plugin_dockwidget_base.ui",
-            Path("my_plugin") / "icon.png",
-            Path("my_plugin") / "README.md",
-            Path("my_plugin") / "pb_tool.cfg",
-        ]:
-            assert expected.exists(), f"{expected} was not created"
-        content = (Path("my_plugin") / "my_plugin_dockwidget.py").read_text()
-        assert "MyPlugin" in content
-        assert "$Template" not in content
+    result = runner.invoke(
+        pb_tool.cli,
+        [
+            "create",
+            "--type",
+            "dockwidget",
+            "--name",
+            "my_plugin",
+            "--class_name",
+            "MyPlugin",
+            "--title",
+            "My Plugin",
+            "--description",
+            "A test plugin",
+            "--author",
+            "Test Author",
+            "--email",
+            "test@example.com",
+        ],
+    )
+    assert result.exit_code == 0
+    for expected in [
+        Path("my_plugin") / "__init__.py",
+        Path("my_plugin") / "my_plugin.py",
+        Path("my_plugin") / "my_plugin_dockwidget.py",
+        Path("my_plugin") / "my_plugin_dockwidget_base.ui",
+        Path("my_plugin") / "icon.png",
+        Path("my_plugin") / "README.md",
+        Path("my_plugin") / "pb_tool.cfg",
+    ]:
+        assert expected.exists(), f"{expected} was not created"
+    content = (Path("my_plugin") / "my_plugin_dockwidget.py").read_text()
+    assert "MyPlugin" in content
+    assert "$Template" not in content
 
 
 def _undefined_names(tree: ast.AST) -> set[str]:
@@ -352,49 +367,50 @@ def _undefined_names(tree: ast.AST) -> set[str]:
 
 
 @pytest.mark.parametrize("plugin_type", ["processing", "dialog", "dockwidget"])
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_create_generates_valid_python(plugin_type: str) -> None:
     """Every generated .py file compiles and references no undefined names."""
-    with runner.isolated_filesystem():
-        result = runner.invoke(
-            pb_tool.cli,
-            [
-                "create",
-                "--type",
-                plugin_type,
-                "--name",
-                "my_plugin",
-                "--class_name",
-                "MyPlugin",
-                "--title",
-                "My Plugin",
-                "--description",
-                "A test plugin",
-                "--author",
-                "Test Author",
-                "--email",
-                "test@example.com",
-            ],
-        )
-        assert result.exit_code == 0, result.output
-        py_files = list(Path("my_plugin").glob("*.py"))
-        assert py_files
-        for py_file in py_files:
-            source = py_file.read_text()
-            tree = ast.parse(source, filename=str(py_file))
-            compile(tree, str(py_file), "exec")
-            assert not _undefined_names(tree), f"{py_file}: undefined {_undefined_names(tree)}"
+    result = runner.invoke(
+        pb_tool.cli,
+        [
+            "create",
+            "--type",
+            plugin_type,
+            "--name",
+            "my_plugin",
+            "--class_name",
+            "MyPlugin",
+            "--title",
+            "My Plugin",
+            "--description",
+            "A test plugin",
+            "--author",
+            "Test Author",
+            "--email",
+            "test@example.com",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    py_files = list(Path("my_plugin").glob("*.py"))
+    assert py_files
+    for py_file in py_files:
+        source = py_file.read_text()
+        tree = ast.parse(source, filename=str(py_file))
+        compile(tree, str(py_file), "exec")
+        assert not _undefined_names(tree), f"{py_file}: undefined {_undefined_names(tree)}"
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_doc() -> None:
     result = runner.invoke(pb_tool.cli, ["doc"])
     assert result.exit_code == 0
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_deploy() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG)
-        result = runner.invoke(pb_tool.cli, ["deploy"], input="y\n")
-        assert result.exit_code == 0
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG)
+    result = runner.invoke(pb_tool.cli, ["deploy"], input="y\n")
+    assert result.exit_code == 0
 
 
 def _write_legacy_plugin_files(search: str = "", replace: str = "") -> None:
@@ -405,58 +421,58 @@ def _write_legacy_plugin_files(search: str = "", replace: str = "") -> None:
     (Path("bar") / "foo.txt").write_text("foo")
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_deploy_quick_no_docs_without_help_section() -> None:
-    with runner.isolated_filesystem():
-        _write_legacy_plugin_files()
-        result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
-        assert result.exit_code == 0
-        assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
-        assert (Path("deploy_build") / "TestPlugin" / "bar" / "baz.txt").exists()
-        assert (Path("deploy_build") / "TestPlugin" / "bar" / "foo.txt").exists()
+    _write_legacy_plugin_files()
+    result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
+    assert result.exit_code == 0
+    assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
+    assert (Path("deploy_build") / "TestPlugin" / "bar" / "baz.txt").exists()
+    assert (Path("deploy_build") / "TestPlugin" / "bar" / "foo.txt").exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_deploy_full_without_help_section() -> None:
-    with runner.isolated_filesystem():
-        _write_legacy_plugin_files()
-        result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs"])
-        assert result.exit_code == 0
-        assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
+    _write_legacy_plugin_files()
+    result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs"])
+    assert result.exit_code == 0
+    assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_deploy_missing_python_file_fails() -> None:
-    with runner.isolated_filesystem():
-        _write_legacy_plugin_files()
-        Path("pb_tool.cfg").write_text(
-            LEGACY_CFG_NO_HELP.replace("python_files: __init__.py", "python_files: __init__.py missing.py")
-        )
-        result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
-        assert result.exit_code == 1
-        assert "ERRORS:" in result.output
-        assert "Error copying files: missing.py" in result.output
-        # files that do exist are still copied
-        assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
+    _write_legacy_plugin_files()
+    Path("pb_tool.cfg").write_text(
+        LEGACY_CFG_NO_HELP.replace("python_files: __init__.py", "python_files: __init__.py missing.py")
+    )
+    result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
+    assert result.exit_code == 1
+    assert "ERRORS:" in result.output
+    assert "Error copying files: missing.py" in result.output
+    # files that do exist are still copied
+    assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_deploy_missing_extra_dir_fails() -> None:
-    with runner.isolated_filesystem():
-        _write_legacy_plugin_files()
-        Path("pb_tool.cfg").write_text(LEGACY_CFG_NO_HELP.replace("extra_dirs: bar", "extra_dirs: bar nodir"))
-        result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
-        assert result.exit_code == 1
-        assert "ERRORS:" in result.output
-        assert "Error copying directory: nodir" in result.output
-        assert (Path("deploy_build") / "TestPlugin" / "bar" / "baz.txt").exists()
-        assert (Path("deploy_build") / "TestPlugin" / "bar" / "foo.txt").exists()
+    _write_legacy_plugin_files()
+    Path("pb_tool.cfg").write_text(LEGACY_CFG_NO_HELP.replace("extra_dirs: bar", "extra_dirs: bar nodir"))
+    result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
+    assert result.exit_code == 1
+    assert "ERRORS:" in result.output
+    assert "Error copying directory: nodir" in result.output
+    assert (Path("deploy_build") / "TestPlugin" / "bar" / "baz.txt").exists()
+    assert (Path("deploy_build") / "TestPlugin" / "bar" / "foo.txt").exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_deploy_skips_excluded_files() -> None:
-    with runner.isolated_filesystem():
-        _write_legacy_plugin_files("excluded_files:", "excluded_files: foo.*")
-        result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
-        assert result.exit_code == 0
-        assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
-        assert (Path("deploy_build") / "TestPlugin" / "bar" / "baz.txt").exists()
-        assert not (Path("deploy_build") / "TestPlugin" / "bar" / "foo.txt").exists()
+    _write_legacy_plugin_files("excluded_files:", "excluded_files: foo.*")
+    result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
+    assert result.exit_code == 0
+    assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
+    assert (Path("deploy_build") / "TestPlugin" / "bar" / "baz.txt").exists()
+    assert not (Path("deploy_build") / "TestPlugin" / "bar" / "foo.txt").exists()
 
 
 LEGACY_CFG_WITH_HELP = (
@@ -476,36 +492,36 @@ def _write_help_build() -> None:
     (html_dir / "_static" / "style.css").write_text("body {}")
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_deploy_copies_help_files() -> None:
-    with runner.isolated_filesystem():
-        _write_legacy_plugin_files()
-        Path("pb_tool.cfg").write_text(LEGACY_CFG_WITH_HELP)
-        _write_help_build()
-        result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--quick"])
-        assert result.exit_code == 0
-        help_target = Path("deploy_build") / "TestPlugin" / "help"
-        assert (help_target / "index.html").read_text() == "<html>index</html>"
-        assert (help_target / "_static" / "style.css").exists()
+    _write_legacy_plugin_files()
+    Path("pb_tool.cfg").write_text(LEGACY_CFG_WITH_HELP)
+    _write_help_build()
+    result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--quick"])
+    assert result.exit_code == 0
+    help_target = Path("deploy_build") / "TestPlugin" / "help"
+    assert (help_target / "index.html").read_text() == "<html>index</html>"
+    assert (help_target / "_static" / "style.css").exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_deploy_no_docs_skips_help_files() -> None:
-    with runner.isolated_filesystem():
-        _write_legacy_plugin_files()
-        Path("pb_tool.cfg").write_text(LEGACY_CFG_WITH_HELP)
-        _write_help_build()
-        result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--quick", "--no-docs"])
-        assert result.exit_code == 0
-        assert not (Path("deploy_build") / "TestPlugin" / "help").exists()
+    _write_legacy_plugin_files()
+    Path("pb_tool.cfg").write_text(LEGACY_CFG_WITH_HELP)
+    _write_help_build()
+    result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--quick", "--no-docs"])
+    assert result.exit_code == 0
+    assert not (Path("deploy_build") / "TestPlugin" / "help").exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_deploy_missing_help_build_is_skipped() -> None:
-    with runner.isolated_filesystem():
-        _write_legacy_plugin_files()
-        Path("pb_tool.cfg").write_text(LEGACY_CFG_WITH_HELP)
-        result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--quick"])
-        assert result.exit_code == 0
-        assert "No help found at help/build/html, skipping" in result.output
-        assert not (Path("deploy_build") / "TestPlugin" / "help").exists()
+    _write_legacy_plugin_files()
+    Path("pb_tool.cfg").write_text(LEGACY_CFG_WITH_HELP)
+    result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--quick"])
+    assert result.exit_code == 0
+    assert "No help found at help/build/html, skipping" in result.output
+    assert not (Path("deploy_build") / "TestPlugin" / "help").exists()
 
 
 INSTALL_FILES_CFG = """
@@ -558,59 +574,59 @@ def test_get_install_files_exclusions(excluded: str, removed: set[str]) -> None:
     assert pb_tool.get_install_files(cfg) == expected
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_zip_full_without_help_section() -> None:
-    with runner.isolated_filesystem():
-        _write_legacy_plugin_files()
-        with (
-            patch.object(pb_tool, "check_path", return_value="zip"),
-            patch.object(subprocess, "check_call"),
-        ):
-            result = runner.invoke(pb_tool.cli, ["zip", "--no-docs"], input="y\n")
-        assert result.exit_code == 0
-        assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
+    _write_legacy_plugin_files()
+    with (
+        patch.object(pb_tool, "check_path", return_value="zip"),
+        patch.object(subprocess, "check_call"),
+    ):
+        result = runner.invoke(pb_tool.cli, ["zip", "--no-docs"], input="y\n")
+    assert result.exit_code == 0
+    assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_zip() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG)
-        with (
-            patch.object(pb_tool, "check_path", return_value="zip"),
-            patch.object(subprocess, "check_call"),
-        ):
-            result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
-        assert result.exit_code == 0
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG)
+    with (
+        patch.object(pb_tool, "check_path", return_value="zip"),
+        patch.object(subprocess, "check_call"),
+    ):
+        result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
+    assert result.exit_code == 0
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_zip_no_zip_binary() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG)
-        with patch.object(pb_tool, "check_path", return_value=None):
-            result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
-        assert result.exit_code != 0
-        assert "zip or 7z not found" in result.output
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG)
+    with patch.object(pb_tool, "check_path", return_value=None):
+        result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
+    assert result.exit_code != 0
+    assert "zip or 7z not found" in result.output
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_zip_missing_plugin_name() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG.replace("name: TestPlugin", "name:"))
-        with patch.object(pb_tool, "check_path", return_value="zip"):
-            result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
-        assert result.exit_code != 0
-        assert "missing the plugin name" in result.output
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG.replace("name: TestPlugin", "name:"))
+    with patch.object(pb_tool, "check_path", return_value="zip"):
+        result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
+    assert result.exit_code != 0
+    assert "missing the plugin name" in result.output
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_deploy_missing_config() -> None:
-    with runner.isolated_filesystem():
-        result = runner.invoke(pb_tool.cli, ["deploy", "-y"])
-        assert result.exit_code != 0
+    result = runner.invoke(pb_tool.cli, ["deploy", "-y"])
+    assert result.exit_code != 0
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_validate_invalid_config() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG.replace("main_dialog:\n", ""))
-        result = runner.invoke(pb_tool.cli, ["validate"])
-        assert result.exit_code != 0
-        assert "invalid" in result.output
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG.replace("main_dialog:\n", ""))
+    result = runner.invoke(pb_tool.cli, ["validate"])
+    assert result.exit_code != 0
+    assert "invalid" in result.output
 
 
 def _meta_value(text: str, key: str) -> str | None:
@@ -623,13 +639,13 @@ def _meta_value(text: str, key: str) -> str | None:
     return m.group(1) if m else None
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_patch_metadata_version_injection() -> None:
     """patch_metadata stamps the release version into an existing version field."""
-    with runner.isolated_filesystem():
-        Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion=0.1\nauthor=Test\n")
-        with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
-            pb_tool.patch_metadata("metadata.txt", release_version="1.2.3")
-        result = Path("metadata.txt").read_text()
+    Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion=0.1\nauthor=Test\n")
+    with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
+        pb_tool.patch_metadata("metadata.txt", release_version="1.2.3")
+    result = Path("metadata.txt").read_text()
     assert _meta_value(result, "version") == "1.2.3"
     assert _meta_value(result, "dateTime")
     # untouched keys are left exactly as they were
@@ -637,64 +653,65 @@ def test_patch_metadata_version_injection() -> None:
     assert "author=Test" in result
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_patch_metadata_prerelease_sets_experimental() -> None:
     """patch_metadata sets experimental=True when the version is a pre-release."""
-    with runner.isolated_filesystem():
-        Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion=0.1\nexperimental=False\n")
-        with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
-            pb_tool.patch_metadata("metadata.txt", release_version="1.2.0-rc1")
-        result = Path("metadata.txt").read_text()
+    Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion=0.1\nexperimental=False\n")
+    with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
+        pb_tool.patch_metadata("metadata.txt", release_version="1.2.0-rc1")
+    result = Path("metadata.txt").read_text()
     assert _meta_value(result, "version") == "1.2.0-rc1"
     assert _meta_value(result, "experimental") == "True"
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_patch_metadata_git_info() -> None:
     """patch_metadata injects commitSha1 and commitNumber returned by get_git_info."""
-    with runner.isolated_filesystem():
-        Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion=0.1\n")
-        with patch.object(pb_tool, "get_git_info", return_value=("abc123def456", 42)):
-            pb_tool.patch_metadata("metadata.txt")
-        result = Path("metadata.txt").read_text()
+    Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion=0.1\n")
+    with patch.object(pb_tool, "get_git_info", return_value=("abc123def456", 42)):
+        pb_tool.patch_metadata("metadata.txt")
+    result = Path("metadata.txt").read_text()
     assert _meta_value(result, "commitSha1") == "abc123def456"
     assert _meta_value(result, "commitNumber") == "42"
     assert _meta_value(result, "dateTime")
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_patch_metadata_appends_missing_fields() -> None:
     """patch_metadata appends fields that don't already exist in the file."""
-    with runner.isolated_filesystem():
-        Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion=0.1\n")
-        with patch.object(pb_tool, "get_git_info", return_value=("deadbeef", 99)):
-            pb_tool.patch_metadata("metadata.txt", release_version="2.0.0")
-        result = Path("metadata.txt").read_text()
+    Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion=0.1\n")
+    with patch.object(pb_tool, "get_git_info", return_value=("deadbeef", 99)):
+        pb_tool.patch_metadata("metadata.txt", release_version="2.0.0")
+    result = Path("metadata.txt").read_text()
     assert _meta_value(result, "version") == "2.0.0"
     assert _meta_value(result, "commitSha1") == "deadbeef"
     assert _meta_value(result, "commitNumber") == "99"
     assert _meta_value(result, "dateTime")
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_patch_metadata_with_whitespace() -> None:
     """patch_metadata tolerates whitespace around the key/value separator."""
-    with runner.isolated_filesystem():
-        Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion = 0.1\nexperimental =False\n")
-        with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
-            pb_tool.patch_metadata("metadata.txt", release_version="1.2.0-rc1")
-        result = Path("metadata.txt").read_text()
+    Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion = 0.1\nexperimental =False\n")
+    with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
+        pb_tool.patch_metadata("metadata.txt", release_version="1.2.0-rc1")
+    result = Path("metadata.txt").read_text()
     assert _meta_value(result, "version") == "1.2.0-rc1"
     assert _meta_value(result, "experimental") == "True"
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_patch_metadata_colon_separator() -> None:
     """patch_metadata patches keys that use a colon separator (QGIS accepts both)."""
-    with runner.isolated_filesystem():
-        Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion: 0.1\n")
-        with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
-            pb_tool.patch_metadata("metadata.txt", release_version="1.2.3")
-        result = Path("metadata.txt").read_text()
+    Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion: 0.1\n")
+    with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
+        pb_tool.patch_metadata("metadata.txt", release_version="1.2.3")
+    result = Path("metadata.txt").read_text()
     assert _meta_value(result, "version") == "1.2.3"
     assert "0.1" not in result
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_patch_metadata_preserves_comments_and_order() -> None:
     """patch_metadata only rewrites the keys it touches, leaving the rest intact."""
     original = (
@@ -710,11 +727,10 @@ def test_patch_metadata_preserves_comments_and_order() -> None:
         "[extra]\n"
         "foo=bar\n"
     )
-    with runner.isolated_filesystem():
-        Path("metadata.txt").write_text(original)
-        with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
-            pb_tool.patch_metadata("metadata.txt", release_version="1.2.3")
-        result = Path("metadata.txt").read_text()
+    Path("metadata.txt").write_text(original)
+    with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
+        pb_tool.patch_metadata("metadata.txt", release_version="1.2.3")
+    result = Path("metadata.txt").read_text()
     assert "# release notes below - keep this comment" in result
     assert "    1.0 first release" in result
     assert "about=Handles 50% of the cases" in result  # '%' left untouched
@@ -723,23 +739,23 @@ def test_patch_metadata_preserves_comments_and_order() -> None:
     assert _meta_value(result, "version") == "1.2.3"
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_patch_metadata_creates_general_section_if_missing() -> None:
     """patch_metadata adds a [general] section instead of crashing when absent."""
-    with runner.isolated_filesystem():
-        Path("metadata.txt").write_text("[help]\nfoo=bar\n")
-        with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
-            pb_tool.patch_metadata("metadata.txt", release_version="1.0.0")
-        result = Path("metadata.txt").read_text()
+    Path("metadata.txt").write_text("[help]\nfoo=bar\n")
+    with patch.object(pb_tool, "get_git_info", return_value=(None, None)):
+        pb_tool.patch_metadata("metadata.txt", release_version="1.0.0")
+    result = Path("metadata.txt").read_text()
     assert "[general]" in result
     assert _meta_value(result, "version") == "1.0.0"
     assert "[help]\nfoo=bar" in result
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_dclean() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG)
-        result = runner.invoke(pb_tool.cli, ["dclean"], input="y\n")
-        assert result.exit_code == 0
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG)
+    result = runner.invoke(pb_tool.cli, ["dclean"], input="y\n")
+    assert result.exit_code == 0
 
 
 def test_resolve_plugin_path_cli_wins_over_config() -> None:
@@ -758,110 +774,112 @@ def test_resolve_plugin_path_config_wins_over_default() -> None:
 
 def test_resolve_plugin_path_falls_back_to_default() -> None:
     cfg = _read_cfg(MINIMAL_CFG)
-    with patch.object(pb_tool, "get_plugin_directory", return_value="qgis_default"):
+    with patch.object(pb_tool, "get_plugin_directory", return_value=Path("qgis_default")):
         result = pb_tool.resolve_plugin_path(cfg)
     assert result == Path("qgis_default").absolute()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_dclean_plugin_path_option() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG)
-        (Path("zip_build") / "TestPlugin").mkdir(parents=True, exist_ok=True)
-        (Path("zip_build") / "TestPlugin" / "x.txt").write_text("x")
-        sentinel = Path("default_qgis").absolute()
-        with patch.object(pb_tool, "get_plugin_directory", return_value=sentinel):
-            result = runner.invoke(pb_tool.cli, ["dclean", "-p", "zip_build"], input="y\n")
-        assert result.exit_code == 0
-        assert not (Path("zip_build") / "TestPlugin").exists()
-        assert not sentinel.exists()
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG)
+    (Path("zip_build") / "TestPlugin").mkdir(parents=True, exist_ok=True)
+    (Path("zip_build") / "TestPlugin" / "x.txt").write_text("x")
+    sentinel = Path("default_qgis").absolute()
+    with patch.object(pb_tool, "get_plugin_directory", return_value=sentinel):
+        result = runner.invoke(pb_tool.cli, ["dclean", "-p", "zip_build"], input="y\n")
+    assert result.exit_code == 0
+    assert not (Path("zip_build") / "TestPlugin").exists()
+    assert not sentinel.exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_dclean_config_plugin_path() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(CFG_WITH_PLUGIN_PATH)
-        (Path("zip_build") / "TestPlugin").mkdir(parents=True, exist_ok=True)
-        (Path("zip_build") / "TestPlugin" / "x.txt").write_text("x")
-        sentinel = Path("default_qgis").absolute()
-        with patch.object(pb_tool, "get_plugin_directory", return_value=sentinel):
-            result = runner.invoke(pb_tool.cli, ["dclean"], input="y\n")
-        assert result.exit_code == 0
-        assert "Using plugin directory from pb_tool.cfg" in result.output
-        assert not (Path("zip_build") / "TestPlugin").exists()
-        assert not sentinel.exists()
+    Path("pb_tool.cfg").write_text(CFG_WITH_PLUGIN_PATH)
+    (Path("zip_build") / "TestPlugin").mkdir(parents=True, exist_ok=True)
+    (Path("zip_build") / "TestPlugin" / "x.txt").write_text("x")
+    sentinel = Path("default_qgis").absolute()
+    with patch.object(pb_tool, "get_plugin_directory", return_value=sentinel):
+        result = runner.invoke(pb_tool.cli, ["dclean"], input="y\n")
+    assert result.exit_code == 0
+    assert "Using plugin directory from pb_tool.cfg" in result.output
+    assert not (Path("zip_build") / "TestPlugin").exists()
+    assert not sentinel.exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_zip_plugin_path_option() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG)
-        sentinel = Path("default_qgis").absolute()
-        with (
-            patch.object(pb_tool, "check_path", return_value="zip"),
-            patch.object(subprocess, "check_call"),
-            patch.object(pb_tool, "get_plugin_directory", return_value=sentinel),
-        ):
-            result = runner.invoke(pb_tool.cli, ["zip", "-p", "zip_build"], input="y\n")
-        assert result.exit_code == 0
-        assert (Path("zip_build") / "TestPlugin").is_dir()
-        assert not sentinel.exists()
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG)
+    sentinel = Path("default_qgis").absolute()
+    with (
+        patch.object(pb_tool, "check_path", return_value="zip"),
+        patch.object(subprocess, "check_call"),
+        patch.object(pb_tool, "get_plugin_directory", return_value=sentinel),
+    ):
+        result = runner.invoke(pb_tool.cli, ["zip", "-p", "zip_build"], input="y\n")
+    assert result.exit_code == 0
+    assert (Path("zip_build") / "TestPlugin").is_dir()
+    assert not sentinel.exists()
 
 
 @pytest.mark.skipif(
     shutil.which("zip") is None and shutil.which("7z") is None,
     reason="zip/7z binary not available",
 )
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_zip_config_plugin_path_end_to_end() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(CFG_WITH_PLUGIN_PATH)
-        sentinel = Path("default_qgis").absolute()
-        with patch.object(pb_tool, "get_plugin_directory", return_value=sentinel):
-            result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
-        assert result.exit_code == 0
-        assert "Using plugin directory from pb_tool.cfg" in result.output
-        assert (Path("zip_build") / "TestPlugin").is_dir()
-        assert (Path("TestPlugin.zip")).exists()
-        assert not sentinel.exists()
+    Path("pb_tool.cfg").write_text(CFG_WITH_PLUGIN_PATH)
+    sentinel = Path("default_qgis").absolute()
+    with patch.object(pb_tool, "get_plugin_directory", return_value=sentinel):
+        result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
+    assert result.exit_code == 0
+    assert "Using plugin directory from pb_tool.cfg" in result.output
+    assert (Path("zip_build") / "TestPlugin").is_dir()
+    assert (Path("TestPlugin.zip")).exists()
+    assert not sentinel.exists()
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_list() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG)
-        result = runner.invoke(pb_tool.cli, ["list"])
-        assert result.exit_code == 0
-        assert "TestPlugin" in result.output
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG)
+    result = runner.invoke(pb_tool.cli, ["list"])
+    assert result.exit_code == 0
+    assert "TestPlugin" in result.output
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_list_missing_config() -> None:
-    with runner.isolated_filesystem():
-        result = runner.invoke(pb_tool.cli, ["list"])
-        assert result.exit_code != 0
+    result = runner.invoke(pb_tool.cli, ["list"])
+    assert result.exit_code != 0
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_version() -> None:
     result = runner.invoke(pb_tool.cli, ["version"])
     assert result.exit_code == 0
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_compile() -> None:
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG)
-        result = runner.invoke(pb_tool.cli, ["compile"])
-        assert result.exit_code == 0
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG)
+    result = runner.invoke(pb_tool.cli, ["compile"])
+    assert result.exit_code == 0
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_compile_no_files_no_tool_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
     # See issue #44: an empty compiled_ui_files/resource_files config should
     # never trigger "not in your path" warnings, even if no Qt tools exist.
     monkeypatch.setattr(pb_tool, "check_path", lambda app: None)
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG)
-        result = runner.invoke(pb_tool.cli, ["compile"])
-        assert result.exit_code == 0
-        assert "pyuic5/pyuic6 is not in your path" not in result.output
-        assert "rcc is not in your path" not in result.output
-        assert "Compiled 0 UI files" in result.output
-        assert "Compiled 0 resource files" in result.output
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG)
+    result = runner.invoke(pb_tool.cli, ["compile"])
+    assert result.exit_code == 0
+    assert "pyuic5/pyuic6 is not in your path" not in result.output
+    assert "rcc is not in your path" not in result.output
+    assert "Compiled 0 UI files" in result.output
+    assert "Compiled 0 resource files" in result.output
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_compile_qt5_resources_without_rcc(monkeypatch: pytest.MonkeyPatch) -> None:
     # Qt5 resource compilation uses pyrcc5, not rcc, so a missing rcc binary
     # should not block it.
@@ -877,13 +895,12 @@ def test_compile_qt5_resources_without_rcc(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setattr(pb_tool, "check_path", fake_check_path)
     monkeypatch.setattr(subprocess, "check_call", fake_check_call)
 
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(cfg)
-        Path("resources.qrc").write_text("<RCC></RCC>\n")
-        result = runner.invoke(pb_tool.cli, ["compile"])
-        assert result.exit_code == 0
-        assert "rcc is not in your path" not in result.output
-        assert "Compiled 1 resource files" in result.output
+    Path("pb_tool.cfg").write_text(cfg)
+    Path("resources.qrc").write_text("<RCC></RCC>\n")
+    result = runner.invoke(pb_tool.cli, ["compile"])
+    assert result.exit_code == 0
+    assert "rcc is not in your path" not in result.output
+    assert "Compiled 1 resource files" in result.output
 
 
 @pytest.mark.parametrize(
@@ -895,6 +912,7 @@ def test_compile_qt5_resources_without_rcc(monkeypatch: pytest.MonkeyPatch) -> N
     ],
     ids=["qt6-rcc", "qt5-pyrcc5", "qt5-pyrcc_main-fallback"],
 )
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_compile_resource_command(
     monkeypatch: pytest.MonkeyPatch, tools: dict[str, str], expected_prefix: list[str]
 ) -> None:
@@ -908,27 +926,26 @@ def test_compile_resource_command(
     monkeypatch.setattr(pb_tool, "check_path", tools.get)
     monkeypatch.setattr(subprocess, "check_call", fake_check_call)
 
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(cfg)
-        Path("resources.qrc").write_text("<RCC></RCC>\n")
-        result = runner.invoke(pb_tool.cli, ["compile"])
-        assert result.exit_code == 0
-        assert calls == [[*expected_prefix, "-o", "resources.py", "resources.qrc"]]
+    Path("pb_tool.cfg").write_text(cfg)
+    Path("resources.qrc").write_text("<RCC></RCC>\n")
+    result = runner.invoke(pb_tool.cli, ["compile"])
+    assert result.exit_code == 0
+    assert calls == [[*expected_prefix, "-o", "resources.py", "resources.qrc"]]
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_compile_qt6_resources_without_rcc(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = MINIMAL_CFG.replace("resource_files:", "resource_files: resources.qrc")
     calls: list[list[str]] = []
     monkeypatch.setattr(pb_tool, "check_path", {"pyuic6": "/fake/pyuic6"}.get)
     monkeypatch.setattr(subprocess, "check_call", calls.append)
 
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(cfg)
-        Path("resources.qrc").write_text("<RCC></RCC>\n")
-        result = runner.invoke(pb_tool.cli, ["compile"])
-        assert result.exit_code == 0
-        assert "rcc is not in your path" in result.output
-        assert calls == []
+    Path("pb_tool.cfg").write_text(cfg)
+    Path("resources.qrc").write_text("<RCC></RCC>\n")
+    result = runner.invoke(pb_tool.cli, ["compile"])
+    assert result.exit_code == 0
+    assert "rcc is not in your path" in result.output
+    assert calls == []
 
 
 @pytest.mark.parametrize(
@@ -939,6 +956,7 @@ def test_compile_qt6_resources_without_rcc(monkeypatch: pytest.MonkeyPatch) -> N
         ("3.6.0", "3.5.10", "development Version"),
     ],
 )
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_update_version_compare(installed: str, latest: str, expected: str) -> None:
     resp = json.dumps({"info": {"version": latest}}).encode()
     with (
@@ -1032,11 +1050,11 @@ def test_command_prefix_resolves_unique_match(prefix: str) -> None:
     assert result.output == runner.invoke(pb_tool.cli, ["version"]).output
 
 
+@pytest.mark.usefixtures("in_tmp_dir")
 def test_exact_command_name_wins_over_longer_matches() -> None:
     # "clean" is also a prefix of "clean-docs", but the exact name must win
-    with runner.isolated_filesystem():
-        Path("pb_tool.cfg").write_text(MINIMAL_CFG)
-        result = runner.invoke(pb_tool.cli, ["clean"])
+    Path("pb_tool.cfg").write_text(MINIMAL_CFG)
+    result = runner.invoke(pb_tool.cli, ["clean"])
     assert result.exit_code == 0
     assert "Cleaning resource and ui files" in result.output
 
