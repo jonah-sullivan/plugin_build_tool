@@ -53,7 +53,7 @@ class AliasedGroup(click.Group):
 
 # @click.group()
 @click.command(cls=AliasedGroup)
-def cli():
+def cli() -> None:
     """Simple Python tool to compile and deploy a QGIS plugin.
     For help on a command use --help after the command:
     pb_tool deploy --help.
@@ -92,7 +92,7 @@ def get_install_files(cfg: configparser.ConfigParser) -> list[str]:
 
 
 @cli.command()
-def version():
+def version() -> None:
     """Return the version of pb_tool and exit"""
     click.echo(__version())
 
@@ -128,7 +128,7 @@ def version():
     is_flag=True,
     help="Skip building the Sphinx help documentation",
 )
-def deploy(config_file, plugin_path, quick, no_confirm, no_docs):
+def deploy(config_file: str, plugin_path: str | None, quick: bool, no_confirm: bool, no_docs: bool) -> None:
     """Deploy the plugin to QGIS plugin directory using parameters in pb_tool.cfg"""
     deploy_files(
         config_file,
@@ -294,7 +294,7 @@ def clean_deployment(ask_first: bool = True, config: str = "pb_tool.cfg", plugin
 
 
 @cli.command()
-def clean_docs():
+def clean_docs() -> None:
     """
     Remove the built HTML help files from the build directory
     """
@@ -322,7 +322,7 @@ def clean_docs():
     default=None,
     help="Specify the directory where your plugin is deployed if not using the standard location",
 )
-def dclean(config, plugin_path):
+def dclean(config: str, plugin_path: str | None) -> None:
     """Remove the deployed plugin from the QGIS plugin directory,
     --plugin_path, or plugin_path in the config file"""
     cfg = get_config(config)
@@ -336,7 +336,7 @@ def dclean(config, plugin_path):
     default="pb_tool.cfg",
     help="Name of the config file to use if other than pb_tool.cfg",
 )
-def clean(config):
+def clean(config: str) -> None:
     """Remove compiled resource and ui files"""
     cfg = get_config(config)
     files = compiled_ui(cfg) + compiled_resource(cfg)
@@ -355,7 +355,7 @@ def clean(config):
     default="pb_tool.cfg",
     help="Name of the config file to use if other than pb_tool.cfg",
 )
-def compile_cmd(config):
+def compile_cmd(config: str) -> None:
     """
     Compile the resource and ui files
     """
@@ -363,7 +363,7 @@ def compile_cmd(config):
 
 
 @cli.command()
-def doc():
+def doc() -> None:
     """Build HTML version of the help files using sphinx"""
     build_docs()
 
@@ -394,7 +394,7 @@ def build_docs() -> None:
     default="pb_tool.cfg",
     help="Name of the config file to use if other than pb_tool.cfg",
 )
-def translate(config):
+def translate(config: str) -> None:
     """Build translations using lrelease. Locales must be specified
     in the config file and the corresponding .ts file must exist in
     the i18n directory of your plugin."""
@@ -413,8 +413,8 @@ def translate(config):
             locales = cfg.get("files", "locales").split()
             if locales:
                 for locale in locales:
-                    locale = Path(locale).with_suffix(".ts")
-                    subprocess.check_call([cmd, Path("i18n") / locale])
+                    ts_file = Path(locale).with_suffix(".ts")
+                    subprocess.check_call([cmd, Path("i18n") / ts_file])
             else:
                 print(f"No translations are specified in {config}")
 
@@ -448,7 +448,13 @@ def translate(config):
     default=None,
     help="Stamp this version string into metadata.txt before packaging (e.g. 1.2.0)",
 )
-def zip_cmd(config_file, quick, plugin_path, no_docs, release_version):
+def zip_cmd(
+    config_file: str,
+    quick: bool,
+    plugin_path: str | None,
+    no_docs: bool,
+    release_version: str | None,
+) -> None:
     """Package the plugin into a zip file
     suitable for uploading to the QGIS
     plugin repository"""
@@ -478,22 +484,22 @@ def zip_cmd(config_file, quick, plugin_path, no_docs, release_version):
     if not name:
         click.secho("Your config file is missing the plugin name (name=parameter)", fg="red")
         sys.exit(1)
-    plugin_path = resolve_plugin_path(cfg, plugin_path)
+    plugin_root = resolve_plugin_path(cfg, plugin_path)
     if not quick:
         proceed = click.confirm("This requires a dclean and deploy first. Proceed?")
         if proceed:
             # clean_deployment(False, config)
-            deploy_files(config_file, plugin_path=plugin_path, build_help=not no_docs, confirm=False)
+            deploy_files(config_file, plugin_path=plugin_root, build_help=not no_docs, confirm=False)
     else:
         # Check to see if the plugin directory exists, otherwise we can't
         # do a quick zip
-        if not Path(plugin_path).joinpath(name).exists():
-            deploy_files(config_file, plugin_path=plugin_path, build_help=not no_docs, confirm=False)
+        if not (plugin_root / name).exists():
+            deploy_files(config_file, plugin_path=plugin_root, build_help=not no_docs, confirm=False)
         proceed = True
 
     if proceed:
         # inject version/git info into the deployed metadata.txt before zipping
-        metadata_path = Path(plugin_path) / name / "metadata.txt"
+        metadata_path = plugin_root / name / "metadata.txt"
         if metadata_path.exists():
             patch_metadata(metadata_path, release_version)
             click.secho("Patched metadata.txt with build info", fg="green")
@@ -520,7 +526,7 @@ def zip_cmd(config_file, quick, plugin_path, no_docs, release_version):
                     "-xr!.buildinfo",
                     "-xr!.buildinfo.bak",
                 ],
-                cwd=plugin_path,
+                cwd=plugin_root,
             )
         else:
             subprocess.check_call(
@@ -538,7 +544,7 @@ def zip_cmd(config_file, quick, plugin_path, no_docs, release_version):
                     "-x",
                     "*/.buildinfo.bak",
                 ],
-                cwd=plugin_path,
+                cwd=plugin_root,
             )
         print(f"The {name}.zip archive has been created in the current directory")
 
@@ -549,7 +555,7 @@ def zip_cmd(config_file, quick, plugin_path, no_docs, release_version):
     default="pb_tool.cfg",
     help="Name of the config file to use if other than pb_tool.cfg",
 )
-def validate(config_file):
+def validate(config_file: str) -> None:
     """
     Check the pb_tool.cfg file for mandatory sections/files
     """
@@ -589,14 +595,7 @@ def validate(config_file):
             fg="red",
         )
 
-    zipbin = find_zip()
-    a7z = find_7z()
-    if zipbin:
-        zip_utility = zipbin
-    elif a7z:
-        zip_utility = a7z
-    else:
-        zip_utility = None
+    zip_utility = find_zip() or find_7z()
     if not zip_utility:
         click.secho("zip or 7z not found. Unable to package the plugin", fg="red")
         click.secho("Check your path or install a zip program", fg="red")
@@ -613,7 +612,7 @@ def validate(config_file):
     default="pb_tool.cfg",
     help="Name of the config file to use if other than pb_tool.cfg",
 )
-def list_cmd(config_file):
+def list_cmd(config_file: str) -> None:
     """List the contents of the configuration file"""
     if Path(config_file).exists():
         for line in Path(config_file).read_text().splitlines():
@@ -638,7 +637,7 @@ def list_cmd(config_file):
     default=None,
     help="Name of package (lower case). This will be used as the directory name for deployment",
 )
-def config(name, package):
+def config(name: str, package: str | None) -> None:
     """
     Create a config file based on source files in the current directory
     """
@@ -723,7 +722,15 @@ def config(name, package):
 @click.option("--description", default=None, help="Short plugin description")
 @click.option("--author", default=None, help="Author name")
 @click.option("--email", default=None, help="Author email")
-def create(plugin_type, name, class_name, title, description, author, email):
+def create(
+    plugin_type: str,
+    name: str | None,
+    class_name: str | None,
+    title: str | None,
+    description: str | None,
+    author: str | None,
+    email: str | None,
+) -> None:
     """Create a new plugin skeleton from a template"""
     import shutil
     from datetime import date
@@ -833,7 +840,7 @@ def create(plugin_type, name, class_name, title, description, author, email):
 
 
 @cli.command()
-def update():
+def update() -> None:
     """Check for update to pb_tool"""
     conn = http.client.HTTPSConnection("pypi.org")
     try:
