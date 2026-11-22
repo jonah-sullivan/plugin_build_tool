@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shutil
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -882,6 +883,49 @@ def test_compile_qt5_resources_without_rcc(monkeypatch):
         assert result.exit_code == 0
         assert "rcc is not in your path" not in result.output
         assert "Compiled 1 resource files" in result.output
+
+
+@pytest.mark.parametrize(
+    "tools, expected_prefix",
+    [
+        ({"pyuic6": "/fake/pyuic6", "rcc": "/fake/rcc"}, ["/fake/rcc", "-g", "python"]),
+        ({"pyuic5": "/fake/pyuic5", "pyrcc5": "/fake/pyrcc5"}, ["/fake/pyrcc5"]),
+        ({"pyuic5": "/fake/pyuic5"}, [sys.executable, "-m", "PyQt5.pyrcc_main"]),
+    ],
+    ids=["qt6-rcc", "qt5-pyrcc5", "qt5-pyrcc_main-fallback"],
+)
+def test_compile_resource_command(monkeypatch, tools, expected_prefix):
+    cfg = MINIMAL_CFG.replace("resource_files:", "resource_files: resources.qrc")
+    calls = []
+
+    def fake_check_call(cmd):
+        calls.append(cmd)
+        Path(cmd[cmd.index("-o") + 1]).write_text("# compiled\n")
+
+    monkeypatch.setattr(pb_tool, "check_path", tools.get)
+    monkeypatch.setattr(pb_tool.subprocess, "check_call", fake_check_call)
+
+    with runner.isolated_filesystem():
+        Path("pb_tool.cfg").write_text(cfg)
+        Path("resources.qrc").write_text("<RCC></RCC>\n")
+        result = runner.invoke(pb_tool.cli, ["compile"])
+        assert result.exit_code == 0
+        assert calls == [[*expected_prefix, "-o", "resources.py", "resources.qrc"]]
+
+
+def test_compile_qt6_resources_without_rcc(monkeypatch):
+    cfg = MINIMAL_CFG.replace("resource_files:", "resource_files: resources.qrc")
+    calls = []
+    monkeypatch.setattr(pb_tool, "check_path", {"pyuic6": "/fake/pyuic6"}.get)
+    monkeypatch.setattr(pb_tool.subprocess, "check_call", calls.append)
+
+    with runner.isolated_filesystem():
+        Path("pb_tool.cfg").write_text(cfg)
+        Path("resources.qrc").write_text("<RCC></RCC>\n")
+        result = runner.invoke(pb_tool.cli, ["compile"])
+        assert result.exit_code == 0
+        assert "rcc is not in your path" in result.output
+        assert calls == []
 
 
 @pytest.mark.parametrize(

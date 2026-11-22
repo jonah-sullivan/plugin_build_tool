@@ -226,7 +226,7 @@ def install_files(plugin_dir: Path, cfg: configparser.ConfigParser, copy_help: b
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(file, dest)
         except Exception as oops:
-            errors.append(f"Error copying files: {file}, {oops.strerror}")
+            errors.append(f"Error copying files: {file}, {oops}")
             click.echo(click.style(" ----> ERROR", fg="red"))
             fail = True
     for xdir in extra_dirs:
@@ -961,9 +961,9 @@ def compile_files(cfg: configparser.ConfigParser) -> None:
         print("Compiled 0 resource files")
         return
 
-    # rcc is only needed for the Qt6 pipeline; Qt5 uses pyrcc5 (or the
-    # PyQt5.pyrcc_main fallback) instead.
-    rcc = None
+    # Resolve the resource compiler command once. rcc is only needed for the
+    # Qt6 pipeline; Qt5 uses pyrcc5 (or the PyQt5.pyrcc_main fallback) instead.
+    rcc_cmd: list[str]
     if qt_version == 6:
         rcc = check_path("rcc")
         if not rcc:
@@ -977,7 +977,11 @@ def compile_files(cfg: configparser.ConfigParser) -> None:
                     fg="red",
                 )
             return
-    elif qt_version is None:
+        rcc_cmd = [rcc, "-g", "python"]
+    elif qt_version == 5:
+        pyrcc5 = check_path("pyrcc5")
+        rcc_cmd = [pyrcc5] if pyrcc5 else [sys.executable, "-m", "PyQt5.pyrcc_main"]
+    else:
         print("Unable to determine Qt version---skipping resource compilation")
         return
 
@@ -987,17 +991,7 @@ def compile_files(cfg: configparser.ConfigParser) -> None:
             output = str(Path(res).with_suffix(".py"))
             if file_changed(res, output):
                 print(f"Compiling {res} to {output}")
-                cmd: list[str] = []
-                if qt_version == 6:
-                    cmd += [rcc, "-g", "python"]
-                if qt_version == 5:
-                    pyrcc5 = check_path("pyrcc5")
-                    if pyrcc5:
-                        cmd += [pyrcc5]
-                    else:
-                        cmd += [sys.executable, "-m", "PyQt5.pyrcc_main"]
-                cmd += ["-o", output, res]
-                subprocess.check_call(cmd)
+                subprocess.check_call([*rcc_cmd, "-o", output, res])
                 content = Path(output).read_text()
                 content = content.replace("from PySide6 import QtCore", "from qgis.PyQt import QtCore")
                 Path(output).write_text(content)
@@ -1157,7 +1151,10 @@ def patch_metadata(metadata_path: str | Path, release_version: str | None = None
     from configupdater import ConfigUpdater
 
     updater = ConfigUpdater()
-    updater.optionxform = str  # preserve camelCase keys (commitSha1, dateTime)
+    # Preserve camelCase keys (commitSha1, dateTime). Overriding optionxform on
+    # the instance is the documented configparser idiom; typeshed declares it a
+    # method, so mypy objects to the assignment.
+    updater.optionxform = str  # type: ignore[method-assign, assignment]
     cfg_content = Path(metadata_path).read_text(encoding="utf-8")
     updater.read_string(cfg_content)
 
