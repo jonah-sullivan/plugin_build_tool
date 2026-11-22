@@ -12,6 +12,27 @@ permissions:
   contents: read
 
 jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        # pb_tool's runtime deps and pytest ship their own type information;
+        # mypy is pinned so a new release can't break CI without a code change.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest mypy==2.4.0
+
+      - name: Run mypy
+        # settings (strict, files, python_version) come from [tool.mypy] in pyproject.toml
+        run: mypy
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:

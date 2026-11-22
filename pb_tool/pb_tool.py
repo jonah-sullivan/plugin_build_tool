@@ -48,7 +48,7 @@ class AliasedGroup(click.Group):
             return None
         elif len(matches) == 1:
             return click.Group.get_command(self, ctx, matches[0])
-        ctx.fail("Too many matches: %s" % ", ".join(sorted(matches)))
+        ctx.fail(f"Too many matches: {', '.join(sorted(matches))}")
 
 
 # @click.group()
@@ -477,7 +477,7 @@ def zip_cmd(
             sys.exit(1)
         else:
             use_7z = True
-    click.secho("Found zip: %s" % zip_exe, fg="green")
+    click.secho(f"Found zip: {zip_exe}", fg="green")
 
     cfg = get_config(config_file)
     name = cfg.get("plugin", "name", fallback=None)

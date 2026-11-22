@@ -59,4 +59,6 @@ strict = true
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I"]
+# ANN: flag missing annotations in the editor/pre-commit (mypy enforces them in CI)
+# UP: modernise syntax for the requires-python floor (e.g. Optional[X] -> X | None)
+select = ["E", "W", "F", "I", "ANN", "UP"]
