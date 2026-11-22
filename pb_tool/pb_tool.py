@@ -775,8 +775,12 @@ def create(
         # dialog / dockwidget menu wiring
         "TemplateMenuAddMethod": "addPluginToMenu",
         "TemplateMenuRemoveMethod": "removePluginMenu",
+        # iface getter for the menu above; used to set the plugin's submenu icon
+        "TemplateMenuGetter": "pluginMenu",
         # dockwidget dock area; PyQt6 (QGIS 4) only accepts the scoped enum form
         "TemplateDockWidgetArea": "Qt.DockWidgetArea.RightDockWidgetArea",
+        # the template binds the area above to `area` before this call
+        "TemplateAddDockWidgetCall": "addDockWidget(area, self.dockwidget)",
         # processing provider / algorithm identifiers
         "TemplateAlgoName": name,
         "TemplateAlgoGroup": name,
