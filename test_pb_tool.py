@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 from unittest.mock import patch
@@ -20,7 +21,7 @@ _real_get_plugin_directory = pb_tool.get_plugin_directory
 
 
 @pytest.fixture(autouse=True)
-def _isolated_qgis_plugin_dir(tmp_path, monkeypatch):
+def _isolated_qgis_plugin_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # never let a test deploy to (or dclean) the real QGIS plugins folder
     monkeypatch.setattr(pb_tool, "get_plugin_directory", lambda: tmp_path / "qgis_plugins")
 
@@ -63,20 +64,20 @@ locales:
 """
 
 
-def _read_cfg(text):
+def _read_cfg(text: str) -> configparser.ConfigParser:
     cfg = configparser.ConfigParser()
     cfg.read_string(text)
     return cfg
 
 
-def test_validate():
+def test_validate() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG)
         result = runner.invoke(pb_tool.cli, ["validate"])
         assert result.exit_code == 0
 
 
-def test_clean():
+def test_clean() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG)
         result = runner.invoke(pb_tool.cli, ["clean"])
@@ -88,7 +89,7 @@ CLEAN_CFG = MINIMAL_CFG.replace("compiled_ui_files:", "compiled_ui_files: settin
 )
 
 
-def test_clean_deletes_compiled_files():
+def test_clean_deletes_compiled_files() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(CLEAN_CFG)
         Path("forms").mkdir()
@@ -107,7 +108,7 @@ def test_clean_deletes_compiled_files():
             assert Path(name).exists()
 
 
-def test_clean_reports_missing_compiled_files():
+def test_clean_reports_missing_compiled_files() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(CLEAN_CFG)
         Path("resources.py").write_text("")
@@ -119,12 +120,12 @@ def test_clean_reports_missing_compiled_files():
         assert not Path("resources.py").exists()
 
 
-def test_cleandocs():
+def test_cleandocs() -> None:
     result = runner.invoke(pb_tool.cli, ["clean-docs"])
     assert result.exit_code == 0
 
 
-def test_config():
+def test_config() -> None:
     with runner.isolated_filesystem():
         result = runner.invoke(
             pb_tool.cli,
@@ -135,7 +136,7 @@ def test_config():
         assert Path("test_from_pytest.cfg").exists()
 
 
-def _write_plugin_sources():
+def _write_plugin_sources() -> None:
     for name in [
         "__init__.py",
         "foo.py",
@@ -153,14 +154,14 @@ def _write_plugin_sources():
     Path("i18n", "foo_fr.ts").write_text("")
 
 
-def test_config_discovers_source_files():
+def test_config_discovers_source_files() -> None:
     with runner.isolated_filesystem():
         _write_plugin_sources()
         result = runner.invoke(pb_tool.cli, ["config", "--name", "discovered.cfg", "--package", "foo"])
         assert result.exit_code == 0
         cfg = _read_cfg(Path("discovered.cfg").read_text())
 
-        def files(option):
+        def files(option: str) -> set[str]:
             # glob order depends on the filesystem, so compare as sets
             return set(cfg.get("files", option).split())
 
@@ -176,7 +177,7 @@ def test_config_discovers_source_files():
         assert files("locales") == {"foo_de.ts", "foo_fr.ts"}
 
 
-def test_config_empty_directory():
+def test_config_empty_directory() -> None:
     with runner.isolated_filesystem():
         result = runner.invoke(pb_tool.cli, ["config", "--name", "empty.cfg", "--package", "foo"])
         assert result.exit_code == 0
@@ -185,7 +186,7 @@ def test_config_empty_directory():
             assert cfg.get("files", option) == ""
 
 
-def test_config_default_name_declined_does_not_write():
+def test_config_default_name_declined_does_not_write() -> None:
     with runner.isolated_filesystem():
         result = runner.invoke(pb_tool.cli, ["config", "--package", "foo"], input="n\n")
         assert result.exit_code == 0
@@ -193,7 +194,7 @@ def test_config_default_name_declined_does_not_write():
         assert not Path("pb_tool.cfg").exists()
 
 
-def test_create():
+def test_create() -> None:
     with runner.isolated_filesystem():
         result = runner.invoke(
             pb_tool.cli,
@@ -216,7 +217,7 @@ def test_create():
         assert result.exit_code == 0
 
 
-def test_create_processing_files():
+def test_create_processing_files() -> None:
     """create --type processing produces the expected files with substituted content."""
     with runner.isolated_filesystem():
         result = runner.invoke(
@@ -255,7 +256,7 @@ def test_create_processing_files():
         assert "$Template" not in content
 
 
-def test_create_dialog_files():
+def test_create_dialog_files() -> None:
     """create --type dialog produces the expected files with substituted content."""
     with runner.isolated_filesystem():
         result = runner.invoke(
@@ -294,7 +295,7 @@ def test_create_dialog_files():
         assert "$Template" not in content
 
 
-def test_create_dockwidget_files():
+def test_create_dockwidget_files() -> None:
     """create --type dockwidget produces the expected files with substituted content."""
     with runner.isolated_filesystem():
         result = runner.invoke(
@@ -333,7 +334,7 @@ def test_create_dockwidget_files():
         assert "$Template" not in content
 
 
-def _undefined_names(tree):
+def _undefined_names(tree: ast.AST) -> set[str]:
     """Names that are read somewhere in the module but never bound or imported."""
     bound = set(dir(builtins)) | {"__file__", "__name__", "__doc__", "__package__", "__spec__"}
     for node in ast.walk(tree):
@@ -351,7 +352,7 @@ def _undefined_names(tree):
 
 
 @pytest.mark.parametrize("plugin_type", ["processing", "dialog", "dockwidget"])
-def test_create_generates_valid_python(plugin_type):
+def test_create_generates_valid_python(plugin_type: str) -> None:
     """Every generated .py file compiles and references no undefined names."""
     with runner.isolated_filesystem():
         result = runner.invoke(
@@ -384,19 +385,19 @@ def test_create_generates_valid_python(plugin_type):
             assert not _undefined_names(tree), f"{py_file}: undefined {_undefined_names(tree)}"
 
 
-def test_doc():
+def test_doc() -> None:
     result = runner.invoke(pb_tool.cli, ["doc"])
     assert result.exit_code == 0
 
 
-def test_deploy():
+def test_deploy() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG)
         result = runner.invoke(pb_tool.cli, ["deploy"], input="y\n")
         assert result.exit_code == 0
 
 
-def _write_legacy_plugin_files(search="", replace=""):
+def _write_legacy_plugin_files(search: str = "", replace: str = "") -> None:
     Path("pb_tool.cfg").write_text(LEGACY_CFG_NO_HELP.replace(search, replace))
     Path("__init__.py").write_text("")
     Path("bar").mkdir(parents=True, exist_ok=True)
@@ -404,7 +405,7 @@ def _write_legacy_plugin_files(search="", replace=""):
     (Path("bar") / "foo.txt").write_text("foo")
 
 
-def test_deploy_quick_no_docs_without_help_section():
+def test_deploy_quick_no_docs_without_help_section() -> None:
     with runner.isolated_filesystem():
         _write_legacy_plugin_files()
         result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
@@ -414,7 +415,7 @@ def test_deploy_quick_no_docs_without_help_section():
         assert (Path("deploy_build") / "TestPlugin" / "bar" / "foo.txt").exists()
 
 
-def test_deploy_full_without_help_section():
+def test_deploy_full_without_help_section() -> None:
     with runner.isolated_filesystem():
         _write_legacy_plugin_files()
         result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs"])
@@ -422,7 +423,7 @@ def test_deploy_full_without_help_section():
         assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
 
 
-def test_deploy_missing_python_file_fails():
+def test_deploy_missing_python_file_fails() -> None:
     with runner.isolated_filesystem():
         _write_legacy_plugin_files()
         Path("pb_tool.cfg").write_text(
@@ -436,7 +437,7 @@ def test_deploy_missing_python_file_fails():
         assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
 
 
-def test_deploy_missing_extra_dir_fails():
+def test_deploy_missing_extra_dir_fails() -> None:
     with runner.isolated_filesystem():
         _write_legacy_plugin_files()
         Path("pb_tool.cfg").write_text(LEGACY_CFG_NO_HELP.replace("extra_dirs: bar", "extra_dirs: bar nodir"))
@@ -448,7 +449,7 @@ def test_deploy_missing_extra_dir_fails():
         assert (Path("deploy_build") / "TestPlugin" / "bar" / "foo.txt").exists()
 
 
-def test_deploy_skips_excluded_files():
+def test_deploy_skips_excluded_files() -> None:
     with runner.isolated_filesystem():
         _write_legacy_plugin_files("excluded_files:", "excluded_files: foo.*")
         result = runner.invoke(pb_tool.cli, ["deploy", "-y", "--no-docs", "--quick"])
@@ -468,14 +469,14 @@ target: help
 )
 
 
-def _write_help_build():
+def _write_help_build() -> None:
     html_dir = Path("help") / "build" / "html"
     (html_dir / "_static").mkdir(parents=True)
     (html_dir / "index.html").write_text("<html>index</html>")
     (html_dir / "_static" / "style.css").write_text("body {}")
 
 
-def test_deploy_copies_help_files():
+def test_deploy_copies_help_files() -> None:
     with runner.isolated_filesystem():
         _write_legacy_plugin_files()
         Path("pb_tool.cfg").write_text(LEGACY_CFG_WITH_HELP)
@@ -487,7 +488,7 @@ def test_deploy_copies_help_files():
         assert (help_target / "_static" / "style.css").exists()
 
 
-def test_deploy_no_docs_skips_help_files():
+def test_deploy_no_docs_skips_help_files() -> None:
     with runner.isolated_filesystem():
         _write_legacy_plugin_files()
         Path("pb_tool.cfg").write_text(LEGACY_CFG_WITH_HELP)
@@ -497,7 +498,7 @@ def test_deploy_no_docs_skips_help_files():
         assert not (Path("deploy_build") / "TestPlugin" / "help").exists()
 
 
-def test_deploy_missing_help_build_is_skipped():
+def test_deploy_missing_help_build_is_skipped() -> None:
     with runner.isolated_filesystem():
         _write_legacy_plugin_files()
         Path("pb_tool.cfg").write_text(LEGACY_CFG_WITH_HELP)
@@ -522,7 +523,7 @@ locales:
 """
 
 
-def test_get_install_files_without_exclusions():
+def test_get_install_files_without_exclusions() -> None:
     cfg = _read_cfg(INSTALL_FILES_CFG)
     assert pb_tool.get_install_files(cfg) == [
         "__init__.py",
@@ -550,37 +551,37 @@ def test_get_install_files_without_exclusions():
         ("nomatch.*", set()),
     ],
 )
-def test_get_install_files_exclusions(excluded, removed):
+def test_get_install_files_exclusions(excluded: str, removed: set[str]) -> None:
     cfg = _read_cfg(INSTALL_FILES_CFG.replace("locales:", f"locales:\nexcluded_files: {excluded}"))
     all_files = pb_tool.get_install_files(_read_cfg(INSTALL_FILES_CFG))
     expected = [f for f in all_files if f not in removed]
     assert pb_tool.get_install_files(cfg) == expected
 
 
-def test_zip_full_without_help_section():
+def test_zip_full_without_help_section() -> None:
     with runner.isolated_filesystem():
         _write_legacy_plugin_files()
         with (
             patch.object(pb_tool, "check_path", return_value="zip"),
-            patch.object(pb_tool.subprocess, "check_call"),
+            patch.object(subprocess, "check_call"),
         ):
             result = runner.invoke(pb_tool.cli, ["zip", "--no-docs"], input="y\n")
         assert result.exit_code == 0
         assert (Path("deploy_build") / "TestPlugin" / "__init__.py").exists()
 
 
-def test_zip():
+def test_zip() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG)
         with (
             patch.object(pb_tool, "check_path", return_value="zip"),
-            patch.object(pb_tool.subprocess, "check_call"),
+            patch.object(subprocess, "check_call"),
         ):
             result = runner.invoke(pb_tool.cli, ["zip"], input="y\n")
         assert result.exit_code == 0
 
 
-def test_zip_no_zip_binary():
+def test_zip_no_zip_binary() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG)
         with patch.object(pb_tool, "check_path", return_value=None):
@@ -589,7 +590,7 @@ def test_zip_no_zip_binary():
         assert "zip or 7z not found" in result.output
 
 
-def test_zip_missing_plugin_name():
+def test_zip_missing_plugin_name() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG.replace("name: TestPlugin", "name:"))
         with patch.object(pb_tool, "check_path", return_value="zip"):
@@ -598,13 +599,13 @@ def test_zip_missing_plugin_name():
         assert "missing the plugin name" in result.output
 
 
-def test_deploy_missing_config():
+def test_deploy_missing_config() -> None:
     with runner.isolated_filesystem():
         result = runner.invoke(pb_tool.cli, ["deploy", "-y"])
         assert result.exit_code != 0
 
 
-def test_validate_invalid_config():
+def test_validate_invalid_config() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG.replace("main_dialog:\n", ""))
         result = runner.invoke(pb_tool.cli, ["validate"])
@@ -612,7 +613,7 @@ def test_validate_invalid_config():
         assert "invalid" in result.output
 
 
-def _meta_value(text, key):
+def _meta_value(text: str, key: str) -> str | None:
     """Return the value of ``key`` in a metadata.txt string, or None.
 
     Accepts either ``=`` or ``:`` as the separator and any whitespace around it,
@@ -622,7 +623,7 @@ def _meta_value(text, key):
     return m.group(1) if m else None
 
 
-def test_patch_metadata_version_injection():
+def test_patch_metadata_version_injection() -> None:
     """patch_metadata stamps the release version into an existing version field."""
     with runner.isolated_filesystem():
         Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion=0.1\nauthor=Test\n")
@@ -636,7 +637,7 @@ def test_patch_metadata_version_injection():
     assert "author=Test" in result
 
 
-def test_patch_metadata_prerelease_sets_experimental():
+def test_patch_metadata_prerelease_sets_experimental() -> None:
     """patch_metadata sets experimental=True when the version is a pre-release."""
     with runner.isolated_filesystem():
         Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion=0.1\nexperimental=False\n")
@@ -647,7 +648,7 @@ def test_patch_metadata_prerelease_sets_experimental():
     assert _meta_value(result, "experimental") == "True"
 
 
-def test_patch_metadata_git_info():
+def test_patch_metadata_git_info() -> None:
     """patch_metadata injects commitSha1 and commitNumber returned by get_git_info."""
     with runner.isolated_filesystem():
         Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion=0.1\n")
@@ -659,7 +660,7 @@ def test_patch_metadata_git_info():
     assert _meta_value(result, "dateTime")
 
 
-def test_patch_metadata_appends_missing_fields():
+def test_patch_metadata_appends_missing_fields() -> None:
     """patch_metadata appends fields that don't already exist in the file."""
     with runner.isolated_filesystem():
         Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion=0.1\n")
@@ -672,7 +673,7 @@ def test_patch_metadata_appends_missing_fields():
     assert _meta_value(result, "dateTime")
 
 
-def test_patch_metadata_with_whitespace():
+def test_patch_metadata_with_whitespace() -> None:
     """patch_metadata tolerates whitespace around the key/value separator."""
     with runner.isolated_filesystem():
         Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion = 0.1\nexperimental =False\n")
@@ -683,7 +684,7 @@ def test_patch_metadata_with_whitespace():
     assert _meta_value(result, "experimental") == "True"
 
 
-def test_patch_metadata_colon_separator():
+def test_patch_metadata_colon_separator() -> None:
     """patch_metadata patches keys that use a colon separator (QGIS accepts both)."""
     with runner.isolated_filesystem():
         Path("metadata.txt").write_text("[general]\nname=TestPlugin\nversion: 0.1\n")
@@ -694,7 +695,7 @@ def test_patch_metadata_colon_separator():
     assert "0.1" not in result
 
 
-def test_patch_metadata_preserves_comments_and_order():
+def test_patch_metadata_preserves_comments_and_order() -> None:
     """patch_metadata only rewrites the keys it touches, leaving the rest intact."""
     original = (
         "[general]\n"
@@ -722,7 +723,7 @@ def test_patch_metadata_preserves_comments_and_order():
     assert _meta_value(result, "version") == "1.2.3"
 
 
-def test_patch_metadata_creates_general_section_if_missing():
+def test_patch_metadata_creates_general_section_if_missing() -> None:
     """patch_metadata adds a [general] section instead of crashing when absent."""
     with runner.isolated_filesystem():
         Path("metadata.txt").write_text("[help]\nfoo=bar\n")
@@ -734,20 +735,20 @@ def test_patch_metadata_creates_general_section_if_missing():
     assert "[help]\nfoo=bar" in result
 
 
-def test_dclean():
+def test_dclean() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG)
         result = runner.invoke(pb_tool.cli, ["dclean"], input="y\n")
         assert result.exit_code == 0
 
 
-def test_resolve_plugin_path_cli_wins_over_config():
+def test_resolve_plugin_path_cli_wins_over_config() -> None:
     cfg = _read_cfg(CFG_WITH_PLUGIN_PATH)
     result = pb_tool.resolve_plugin_path(cfg, "cli_path")
     assert result == Path("cli_path").absolute()
 
 
-def test_resolve_plugin_path_config_wins_over_default():
+def test_resolve_plugin_path_config_wins_over_default() -> None:
     cfg = _read_cfg(CFG_WITH_PLUGIN_PATH)
     with patch.object(pb_tool, "get_plugin_directory") as mock_default:
         result = pb_tool.resolve_plugin_path(cfg)
@@ -755,14 +756,14 @@ def test_resolve_plugin_path_config_wins_over_default():
     assert result == Path("./zip_build").absolute()
 
 
-def test_resolve_plugin_path_falls_back_to_default():
+def test_resolve_plugin_path_falls_back_to_default() -> None:
     cfg = _read_cfg(MINIMAL_CFG)
     with patch.object(pb_tool, "get_plugin_directory", return_value="qgis_default"):
         result = pb_tool.resolve_plugin_path(cfg)
     assert result == Path("qgis_default").absolute()
 
 
-def test_dclean_plugin_path_option():
+def test_dclean_plugin_path_option() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG)
         (Path("zip_build") / "TestPlugin").mkdir(parents=True, exist_ok=True)
@@ -775,7 +776,7 @@ def test_dclean_plugin_path_option():
         assert not sentinel.exists()
 
 
-def test_dclean_config_plugin_path():
+def test_dclean_config_plugin_path() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(CFG_WITH_PLUGIN_PATH)
         (Path("zip_build") / "TestPlugin").mkdir(parents=True, exist_ok=True)
@@ -789,13 +790,13 @@ def test_dclean_config_plugin_path():
         assert not sentinel.exists()
 
 
-def test_zip_plugin_path_option():
+def test_zip_plugin_path_option() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG)
         sentinel = Path("default_qgis").absolute()
         with (
             patch.object(pb_tool, "check_path", return_value="zip"),
-            patch.object(pb_tool.subprocess, "check_call"),
+            patch.object(subprocess, "check_call"),
             patch.object(pb_tool, "get_plugin_directory", return_value=sentinel),
         ):
             result = runner.invoke(pb_tool.cli, ["zip", "-p", "zip_build"], input="y\n")
@@ -808,7 +809,7 @@ def test_zip_plugin_path_option():
     shutil.which("zip") is None and shutil.which("7z") is None,
     reason="zip/7z binary not available",
 )
-def test_zip_config_plugin_path_end_to_end():
+def test_zip_config_plugin_path_end_to_end() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(CFG_WITH_PLUGIN_PATH)
         sentinel = Path("default_qgis").absolute()
@@ -821,7 +822,7 @@ def test_zip_config_plugin_path_end_to_end():
         assert not sentinel.exists()
 
 
-def test_list():
+def test_list() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG)
         result = runner.invoke(pb_tool.cli, ["list"])
@@ -829,25 +830,25 @@ def test_list():
         assert "TestPlugin" in result.output
 
 
-def test_list_missing_config():
+def test_list_missing_config() -> None:
     with runner.isolated_filesystem():
         result = runner.invoke(pb_tool.cli, ["list"])
         assert result.exit_code != 0
 
 
-def test_version():
+def test_version() -> None:
     result = runner.invoke(pb_tool.cli, ["version"])
     assert result.exit_code == 0
 
 
-def test_compile():
+def test_compile() -> None:
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG)
         result = runner.invoke(pb_tool.cli, ["compile"])
         assert result.exit_code == 0
 
 
-def test_compile_no_files_no_tool_warnings(monkeypatch):
+def test_compile_no_files_no_tool_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
     # See issue #44: an empty compiled_ui_files/resource_files config should
     # never trigger "not in your path" warnings, even if no Qt tools exist.
     monkeypatch.setattr(pb_tool, "check_path", lambda app: None)
@@ -861,20 +862,20 @@ def test_compile_no_files_no_tool_warnings(monkeypatch):
         assert "Compiled 0 resource files" in result.output
 
 
-def test_compile_qt5_resources_without_rcc(monkeypatch):
+def test_compile_qt5_resources_without_rcc(monkeypatch: pytest.MonkeyPatch) -> None:
     # Qt5 resource compilation uses pyrcc5, not rcc, so a missing rcc binary
     # should not block it.
     cfg = MINIMAL_CFG.replace("resource_files:", "resource_files: resources.qrc")
 
-    def fake_check_path(app):
+    def fake_check_path(app: str) -> str | None:
         return {"pyuic5": "/fake/pyuic5", "pyrcc5": "/fake/pyrcc5"}.get(app)
 
-    def fake_check_call(cmd):
+    def fake_check_call(cmd: list[str]) -> None:
         output = cmd[cmd.index("-o") + 1]
         Path(output).write_text("# compiled\n")
 
     monkeypatch.setattr(pb_tool, "check_path", fake_check_path)
-    monkeypatch.setattr(pb_tool.subprocess, "check_call", fake_check_call)
+    monkeypatch.setattr(subprocess, "check_call", fake_check_call)
 
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(cfg)
@@ -894,16 +895,18 @@ def test_compile_qt5_resources_without_rcc(monkeypatch):
     ],
     ids=["qt6-rcc", "qt5-pyrcc5", "qt5-pyrcc_main-fallback"],
 )
-def test_compile_resource_command(monkeypatch, tools, expected_prefix):
+def test_compile_resource_command(
+    monkeypatch: pytest.MonkeyPatch, tools: dict[str, str], expected_prefix: list[str]
+) -> None:
     cfg = MINIMAL_CFG.replace("resource_files:", "resource_files: resources.qrc")
-    calls = []
+    calls: list[list[str]] = []
 
-    def fake_check_call(cmd):
+    def fake_check_call(cmd: list[str]) -> None:
         calls.append(cmd)
         Path(cmd[cmd.index("-o") + 1]).write_text("# compiled\n")
 
     monkeypatch.setattr(pb_tool, "check_path", tools.get)
-    monkeypatch.setattr(pb_tool.subprocess, "check_call", fake_check_call)
+    monkeypatch.setattr(subprocess, "check_call", fake_check_call)
 
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(cfg)
@@ -913,11 +916,11 @@ def test_compile_resource_command(monkeypatch, tools, expected_prefix):
         assert calls == [[*expected_prefix, "-o", "resources.py", "resources.qrc"]]
 
 
-def test_compile_qt6_resources_without_rcc(monkeypatch):
+def test_compile_qt6_resources_without_rcc(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = MINIMAL_CFG.replace("resource_files:", "resource_files: resources.qrc")
-    calls = []
+    calls: list[list[str]] = []
     monkeypatch.setattr(pb_tool, "check_path", {"pyuic6": "/fake/pyuic6"}.get)
-    monkeypatch.setattr(pb_tool.subprocess, "check_call", calls.append)
+    monkeypatch.setattr(subprocess, "check_call", calls.append)
 
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(cfg)
@@ -936,7 +939,7 @@ def test_compile_qt6_resources_without_rcc(monkeypatch):
         ("3.6.0", "3.5.10", "development Version"),
     ],
 )
-def test_update_version_compare(installed, latest, expected):
+def test_update_version_compare(installed: str, latest: str, expected: str) -> None:
     resp = json.dumps({"info": {"version": latest}}).encode()
     with (
         patch("pb_tool.pb_tool.http.client.HTTPSConnection") as conn,
@@ -951,30 +954,30 @@ def test_update_version_compare(installed, latest, expected):
 # --- file_changed ---------------------------------------------------------
 
 
-def _touch(path, mtime):
+def _touch(path: Path, mtime: int) -> None:
     Path(path).write_text("")
     os.utime(path, (mtime, mtime))
 
 
-def test_file_changed_source_newer(tmp_path):
+def test_file_changed_source_newer(tmp_path: Path) -> None:
     _touch(tmp_path / "a.ui", 2000)
     _touch(tmp_path / "a.py", 1000)
     assert pb_tool.file_changed(tmp_path / "a.ui", tmp_path / "a.py") is True
 
 
-def test_file_changed_output_up_to_date(tmp_path):
+def test_file_changed_output_up_to_date(tmp_path: Path) -> None:
     _touch(tmp_path / "a.ui", 1000)
     _touch(tmp_path / "a.py", 2000)
     assert pb_tool.file_changed(tmp_path / "a.ui", tmp_path / "a.py") is False
 
 
-def test_file_changed_same_mtime_is_unchanged(tmp_path):
+def test_file_changed_same_mtime_is_unchanged(tmp_path: Path) -> None:
     _touch(tmp_path / "a.ui", 1000)
     _touch(tmp_path / "a.py", 1000)
     assert pb_tool.file_changed(tmp_path / "a.ui", tmp_path / "a.py") is False
 
 
-def test_file_changed_missing_output(tmp_path):
+def test_file_changed_missing_output(tmp_path: Path) -> None:
     _touch(tmp_path / "a.ui", 1000)
     assert pb_tool.file_changed(tmp_path / "a.ui", tmp_path / "a.py") is True
 
@@ -985,33 +988,33 @@ PLUGINS = ("profiles", "default", "python", "plugins")
 
 
 @pytest.fixture
-def fake_home(tmp_path, monkeypatch):
-    monkeypatch.setattr(pb_tool.Path, "home", lambda: tmp_path)
-    monkeypatch.setattr(pb_tool.sys, "platform", "linux")
+def fake_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    monkeypatch.setattr(sys, "platform", "linux")
     return tmp_path
 
 
-def test_get_plugin_directory_defaults_to_qgis4(fake_home):
+def test_get_plugin_directory_defaults_to_qgis4(fake_home: Path) -> None:
     # neither profile exists yet
     expected = fake_home.joinpath(".local", "share", "QGIS", "QGIS4", *PLUGINS)
     assert _real_get_plugin_directory() == expected
 
 
-def test_get_plugin_directory_prefers_existing_qgis4(fake_home):
+def test_get_plugin_directory_prefers_existing_qgis4(fake_home: Path) -> None:
     for version in ("QGIS3", "QGIS4"):
         fake_home.joinpath(".local", "share", "QGIS", version, *PLUGINS).mkdir(parents=True)
     expected = fake_home.joinpath(".local", "share", "QGIS", "QGIS4", *PLUGINS)
     assert _real_get_plugin_directory() == expected
 
 
-def test_get_plugin_directory_falls_back_to_qgis3(fake_home):
+def test_get_plugin_directory_falls_back_to_qgis3(fake_home: Path) -> None:
     qgis3 = fake_home.joinpath(".local", "share", "QGIS", "QGIS3", *PLUGINS)
     qgis3.mkdir(parents=True)
     assert _real_get_plugin_directory() == qgis3
 
 
-def test_get_plugin_directory_windows_uses_appdata(fake_home, monkeypatch):
-    monkeypatch.setattr(pb_tool.sys, "platform", "win32")
+def test_get_plugin_directory_windows_uses_appdata(fake_home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(sys, "platform", "win32")
     appdata = fake_home / "AppData" / "Roaming"
     monkeypatch.setenv("APPDATA", str(appdata))
     qgis3 = appdata.joinpath("QGIS", "QGIS3", *PLUGINS)
@@ -1023,13 +1026,13 @@ def test_get_plugin_directory_windows_uses_appdata(fake_home, monkeypatch):
 
 
 @pytest.mark.parametrize("prefix", ["vers", "versi"])
-def test_command_prefix_resolves_unique_match(prefix):
+def test_command_prefix_resolves_unique_match(prefix: str) -> None:
     result = runner.invoke(pb_tool.cli, [prefix])
     assert result.exit_code == 0
     assert result.output == runner.invoke(pb_tool.cli, ["version"]).output
 
 
-def test_exact_command_name_wins_over_longer_matches():
+def test_exact_command_name_wins_over_longer_matches() -> None:
     # "clean" is also a prefix of "clean-docs", but the exact name must win
     with runner.isolated_filesystem():
         Path("pb_tool.cfg").write_text(MINIMAL_CFG)
@@ -1046,13 +1049,13 @@ def test_exact_command_name_wins_over_longer_matches():
         ("d", "dclean, deploy, doc"),
     ],
 )
-def test_ambiguous_command_prefix_fails(prefix, matches):
+def test_ambiguous_command_prefix_fails(prefix: str, matches: str) -> None:
     result = runner.invoke(pb_tool.cli, [prefix])
     assert result.exit_code == 2
     assert f"Too many matches: {matches}" in result.output
 
 
-def test_unknown_command_fails():
+def test_unknown_command_fails() -> None:
     result = runner.invoke(pb_tool.cli, ["nosuchcommand"])
     assert result.exit_code == 2
     assert "No such command" in result.output

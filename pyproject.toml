@@ -55,12 +55,6 @@ files = ["pb_tool", "test_pb_tool.py"]
 explicit_package_bases = true
 strict = true
 
-[[tool.mypy.overrides]]
-module = "test_pb_tool"
-disallow_untyped_defs = false
-disallow_untyped_calls = false
-disallow_incomplete_defs = false
-
 [tool.ruff]
 line-length = 120
 
