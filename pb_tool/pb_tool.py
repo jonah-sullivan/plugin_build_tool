@@ -343,13 +343,13 @@ def clean(config):
             print(f"Couldn't delete {file}: {oops.strerror}")
 
 
-@cli.command()
+@cli.command(name="compile")
 @click.option(
     "--config",
     default="pb_tool.cfg",
     help="Name of the config file to use if other than pb_tool.cfg",
 )
-def compile(config):
+def compile_cmd(config):
     """
     Compile the resource and ui files
     """
@@ -413,7 +413,7 @@ def translate(config):
                 print(f"No translations are specified in {config}")
 
 
-@cli.command()
+@cli.command(name="zip")
 @click.option(
     "--config_file",
     default="pb_tool.cfg",
@@ -442,18 +442,18 @@ def translate(config):
     default=None,
     help="Stamp this version string into metadata.txt before packaging (e.g. 1.2.0)",
 )
-def zip(config_file, quick, plugin_path, no_docs, release_version):
+def zip_cmd(config_file, quick, plugin_path, no_docs, release_version):
     """Package the plugin into a zip file
     suitable for uploading to the QGIS
     plugin repository"""
 
     # check to see if we can find zip or 7z
     use_7z = False
-    zip = check_path("zip")
-    if not zip:
+    zip_exe = check_path("zip")
+    if not zip_exe:
         # check for 7z
-        zip = check_path("7z")
-        if not zip:
+        zip_exe = check_path("7z")
+        if not zip_exe:
             click.secho("zip or 7z not found. Unable to package the plugin", fg="red")
             if sys.platform == "win32":
                 click.secho(
@@ -465,7 +465,7 @@ def zip(config_file, quick, plugin_path, no_docs, release_version):
             sys.exit(1)
         else:
             use_7z = True
-    click.secho("Found zip: %s" % zip, fg="green")
+    click.secho("Found zip: %s" % zip_exe, fg="green")
 
     cfg = get_config(config_file)
     name = cfg.get("plugin", "name", fallback=None)
@@ -504,7 +504,7 @@ def zip(config_file, quick, plugin_path, no_docs, release_version):
         if use_7z:
             subprocess.check_call(
                 [
-                    zip,
+                    zip_exe,
                     "a",
                     "-r",
                     str(zip_path),
@@ -519,7 +519,7 @@ def zip(config_file, quick, plugin_path, no_docs, release_version):
         else:
             subprocess.check_call(
                 [
-                    zip,
+                    zip_exe,
                     "-r",
                     str(zip_path),
                     name,
@@ -601,13 +601,13 @@ def validate(config_file):
         sys.exit(1)
 
 
-@cli.command()
+@cli.command(name="list")
 @click.option(
     "--config_file",
     default="pb_tool.cfg",
     help="Name of the config file to use if other than pb_tool.cfg",
 )
-def list(config_file):
+def list_cmd(config_file):
     """List the contents of the configuration file"""
     if Path(config_file).exists():
         for line in Path(config_file).read_text().splitlines():
@@ -1116,14 +1116,12 @@ def file_changed(infile, outfile):
 
 def find_zip():
     # check to see if we can find zip
-    zip = check_path("zip")
-    return zip
+    return check_path("zip")
 
 
 def find_7z():
     # check for 7z
-    zip = check_path("7z")
-    return zip
+    return check_path("7z")
 
 
 def get_git_info():

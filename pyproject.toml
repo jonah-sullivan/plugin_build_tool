@@ -23,7 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = ["click", "colorama", "configupdater", "defusedxml", "packaging"]
 
 [project.optional-dependencies]
@@ -46,6 +46,20 @@ artifacts = [
 
 [tool.pytest.ini_options]
 testpaths = ["test_pb_tool.py"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["pb_tool", "test_pb_tool.py"]
+# pb_tool/ has no __init__.py (namespace package); resolve module names from the
+# project root so pb_tool/pb_tool.py is "pb_tool.pb_tool", matching the test import.
+explicit_package_bases = true
+strict = true
+
+[[tool.mypy.overrides]]
+module = "test_pb_tool"
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+disallow_incomplete_defs = false
 
 [tool.ruff]
 line-length = 120
