@@ -39,7 +39,7 @@ from packaging.version import Version
 
 
 class AliasedGroup(click.Group):
-    def get_command(self, ctx, cmd_name):
+    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
         rv = click.Group.get_command(self, ctx, cmd_name)
         if rv is not None:
             return rv
@@ -72,7 +72,7 @@ def cli():
     pass
 
 
-def __version():
+def __version() -> str:
     """return the current version"""
     try:
         return _pkg_version("pb_tool")
@@ -80,7 +80,7 @@ def __version():
         return "unknown"
 
 
-def get_install_files(cfg):
+def get_install_files(cfg: configparser.ConfigParser) -> list[str]:
     python_files = cfg.get("files", "python_files").split()
     main_dialog = cfg.get("files", "main_dialog").split()
     extras = cfg.get("files", "extras").split()
@@ -139,7 +139,7 @@ def deploy(config_file, plugin_path, quick, no_confirm, no_docs):
     )
 
 
-def resolve_plugin_path(cfg, plugin_path=None):
+def resolve_plugin_path(cfg: configparser.ConfigParser, plugin_path: str | Path | None = None) -> Path:
     """Resolve the plugin deployment directory.
 
     Precedence: explicit plugin_path (--plugin_path/-p) > plugin_path in the
@@ -157,7 +157,13 @@ def resolve_plugin_path(cfg, plugin_path=None):
     return Path(plugin_path).absolute()
 
 
-def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help=True):
+def deploy_files(
+    config_file: str,
+    plugin_path: str | Path | None,
+    confirm: bool = True,
+    quick: bool = False,
+    build_help: bool = True,
+) -> None:
     """Deploy the plugin using parameters in pb_tool.cfg"""
     # check for the config file
     if not Path(config_file).exists():
@@ -205,7 +211,7 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False, build_help
                 install_files(plugin_dir, cfg, copy_help=build_help)
 
 
-def install_files(plugin_dir, cfg, copy_help=True):
+def install_files(plugin_dir: Path, cfg: configparser.ConfigParser, copy_help: bool = True) -> None:
     errors = []
     install_files = get_install_files(cfg)
     plugin_dir.mkdir(parents=True, exist_ok=True)
@@ -265,7 +271,7 @@ def install_files(plugin_dir, cfg, copy_help=True):
         sys.exit(1)
 
 
-def clean_deployment(ask_first=True, config="pb_tool.cfg", plugin_dir=None):
+def clean_deployment(ask_first: bool = True, config: str = "pb_tool.cfg", plugin_dir: Path | None = None) -> bool:
     """Remove the deployed plugin from the .local/share/QGIS/QGIS4/profiles/default/python/plugins directory"""
     if not plugin_dir:
         cfg = get_config(config)
@@ -362,7 +368,7 @@ def doc():
     build_docs()
 
 
-def build_docs():
+def build_docs() -> None:
     """Build the docs using sphinx"""
     if Path("help").exists():
         # skip if no make file found
@@ -858,7 +864,7 @@ def update():
         conn.close()
 
 
-def check_cfg(cfg, section, name):
+def check_cfg(cfg: configparser.ConfigParser, section: str, name: str) -> bool:
     try:
         cfg.get(section, name)
         return True
@@ -869,7 +875,7 @@ def check_cfg(cfg, section, name):
     return False
 
 
-def get_config(config="pb_tool.cfg"):
+def get_config(config: str = "pb_tool.cfg") -> configparser.ConfigParser:
     """
     Read the config file pb_tools.cfg and return it
     """
@@ -884,7 +890,7 @@ def get_config(config="pb_tool.cfg"):
         sys.exit(1)
 
 
-def compiled_ui(cfg):
+def compiled_ui(cfg: configparser.ConfigParser) -> list[str]:
     try:
         uis = cfg.get("files", "compiled_ui_files").split()
         compiled = []
@@ -896,7 +902,7 @@ def compiled_ui(cfg):
         sys.exit(1)
 
 
-def compiled_resource(cfg):
+def compiled_resource(cfg: configparser.ConfigParser) -> list[str]:
     try:
         res_files = cfg.get("files", "resource_files").split()
         compiled = []
@@ -908,7 +914,7 @@ def compiled_resource(cfg):
         sys.exit(1)
 
 
-def compile_files(cfg):
+def compile_files(cfg: configparser.ConfigParser) -> None:
     # Compile all ui and resource files
     # TODO add changed detection
     # cfg = get_config(config)
@@ -917,6 +923,8 @@ def compile_files(cfg):
     res_files = cfg.get("files", "resource_files").split()
 
     # determine Qt version and select appropriate uic tool
+    pyuic: str | None
+    qt_version: int | None
     if check_path("pyuic6"):
         pyuic = check_path("pyuic6")
         qt_version = 6
@@ -979,7 +987,7 @@ def compile_files(cfg):
             output = str(Path(res).with_suffix(".py"))
             if file_changed(res, output):
                 print(f"Compiling {res} to {output}")
-                cmd = []
+                cmd: list[str] = []
                 if qt_version == 6:
                     cmd += [rcc, "-g", "python"]
                 if qt_version == 5:
@@ -1001,7 +1009,7 @@ def compile_files(cfg):
     print(f"Compiled {res_count} resource files")
 
 
-def get_plugin_directory():
+def get_plugin_directory() -> Path:
     home = Path.home()
     if sys.platform == "win32":
         appdata = Path(os.environ.get("APPDATA", home))
@@ -1041,7 +1049,7 @@ def get_plugin_directory():
     return default
 
 
-def config_template():
+def config_template() -> str:
     """
     :return: the template for a pb_tool.cfg file
     """
@@ -1101,11 +1109,11 @@ target: help
     return template
 
 
-def check_path(app):
+def check_path(app: str) -> str | None:
     return shutil.which(app)
 
 
-def file_changed(infile, outfile):
+def file_changed(infile: str | Path, outfile: str | Path) -> bool:
     try:
         infile_s = Path(infile).stat()
         outfile_s = Path(outfile).stat()
@@ -1114,17 +1122,17 @@ def file_changed(infile, outfile):
         return True
 
 
-def find_zip():
+def find_zip() -> str | None:
     # check to see if we can find zip
     return check_path("zip")
 
 
-def find_7z():
+def find_7z() -> str | None:
     # check for 7z
     return check_path("7z")
 
 
-def get_git_info():
+def get_git_info() -> tuple[str, int] | tuple[None, None]:
     """Return (sha1, commit_count) from git, or (None, None) if not in a git repo."""
     try:
         sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
@@ -1134,7 +1142,7 @@ def get_git_info():
         return None, None
 
 
-def patch_metadata(metadata_path, release_version=None):
+def patch_metadata(metadata_path: str | Path, release_version: str | None = None) -> None:
     """Inject version, git SHA, commit count, and datetime into a deployed metadata.txt.
 
     Edits are surgical: only the touched keys change. Comments, blank lines and
@@ -1157,12 +1165,12 @@ def patch_metadata(metadata_path, release_version=None):
         updater.add_section("general")
     general = updater["general"]
 
-    def set_key(key, value):
-        value = str(value)
+    def set_key(key: str, value: object) -> None:
+        text = str(value)
         if key in general:
-            general[key].value = value
+            general[key].value = text
         else:
-            general[key] = value
+            general[key] = text
 
     if release_version:
         set_key("version", release_version)
