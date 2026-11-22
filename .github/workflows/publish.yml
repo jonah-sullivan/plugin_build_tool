@@ -6,7 +6,16 @@ on:
       - "v*"
 
 jobs:
+  # run the same typecheck + test matrix as test.yml against the tagged commit
+  test:
+    uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
+    secrets: inherit # CODECOV_TOKEN for the coverage upload step
+
   publish:
+    # never upload a release that hasn't passed the test suite
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       id-token: write
