@@ -62,7 +62,7 @@ def cli() -> None:
     declares the files and resources used in your plugin. Plugin Builder
     2.6.0 creates a config file when you generate a new plugin template.
 
-    See https://jonah-sullivan.github.io/plugin_build_tool/#configuration for for an example config
+    See https://jonah-sullivan.github.io/plugin_build_tool/#configuration for an example config
     file. You can also use the create command to generate a best-guess config
     file for an existing project, then tweak as needed.
 
